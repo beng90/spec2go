@@ -22,7 +22,7 @@ func {{ .Name }}(v *validator.Validate, r *http.Request) map[string]validator.Va
 	errs := make(ValidationErrors)
     {{range $parameter := .Parameters }}{{range .Rules }}
     err = v.Var(r.Form.Get("{{ $parameter.Name }}"), "{{ . }}")
-    try(errs, "id", err)
+    try(errs, "{{ $parameter.Name }}", err)
     {{ end }}{{ end }}
 	return errs
 }

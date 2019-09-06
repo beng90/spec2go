@@ -22,31 +22,31 @@ func AddOfferRequestValidate(v *validator.Validate, r *http.Request) map[string]
 	errs := make(ValidationErrors)
 
 	err = v.Var(r.Form.Get("categoryId"), "required")
-	try(errs, "id", err)
+	try(errs, "categoryId", err)
 
 	err = v.Var(r.Form.Get("categoryId"), "numeric")
-	try(errs, "id", err)
+	try(errs, "categoryId", err)
 
 	err = v.Var(r.Form.Get("categoryId"), "min=1.00")
-	try(errs, "id", err)
+	try(errs, "categoryId", err)
 
 	err = v.Var(r.Form.Get("categoryId"), "max=4294967295.00")
-	try(errs, "id", err)
+	try(errs, "categoryId", err)
 
 	err = v.Var(r.Form.Get("categoryTree"), "required")
-	try(errs, "id", err)
+	try(errs, "categoryTree", err)
 
 	err = v.Var(r.Form.Get("createdAt"), "required")
-	try(errs, "id", err)
+	try(errs, "createdAt", err)
 
 	err = v.Var(r.Form.Get("createdAt"), "date:dd-mm-yyyy H:i:s")
-	try(errs, "id", err)
+	try(errs, "createdAt", err)
 
 	err = v.Var(r.Form.Get("expireAt"), "required")
-	try(errs, "id", err)
+	try(errs, "expireAt", err)
 
 	err = v.Var(r.Form.Get("expireAt"), "date:dd-mm-yyyy H:i:s")
-	try(errs, "id", err)
+	try(errs, "expireAt", err)
 
 	err = v.Var(r.Form.Get("id"), "required")
 	try(errs, "id", err)
@@ -61,43 +61,43 @@ func AddOfferRequestValidate(v *validator.Validate, r *http.Request) map[string]
 	try(errs, "id", err)
 
 	err = v.Var(r.Form.Get("productId"), "required")
-	try(errs, "id", err)
+	try(errs, "productId", err)
 
 	err = v.Var(r.Form.Get("productId"), "numeric")
-	try(errs, "id", err)
+	try(errs, "productId", err)
 
 	err = v.Var(r.Form.Get("productId"), "min=1.00")
-	try(errs, "id", err)
+	try(errs, "productId", err)
 
 	err = v.Var(r.Form.Get("productId"), "max=99999999999999.00")
-	try(errs, "id", err)
+	try(errs, "productId", err)
 
 	err = v.Var(r.Form.Get("productName"), "min=1.00")
-	try(errs, "id", err)
+	try(errs, "productName", err)
 
 	err = v.Var(r.Form.Get("productName"), "max=255.00")
-	try(errs, "id", err)
+	try(errs, "productName", err)
 
 	err = v.Var(r.Form.Get("productTypeId"), "required")
-	try(errs, "id", err)
+	try(errs, "productTypeId", err)
 
 	err = v.Var(r.Form.Get("productTypeId"), "numeric")
-	try(errs, "id", err)
+	try(errs, "productTypeId", err)
 
 	err = v.Var(r.Form.Get("productTypeId"), "min=1.00")
-	try(errs, "id", err)
+	try(errs, "productTypeId", err)
 
 	err = v.Var(r.Form.Get("productTypeId"), "max=4294967295.00")
-	try(errs, "id", err)
+	try(errs, "productTypeId", err)
 
 	err = v.Var(r.Form.Get("updatedAt"), "required")
-	try(errs, "id", err)
+	try(errs, "updatedAt", err)
 
 	err = v.Var(r.Form.Get("updatedAt"), "date:dd-mm-yyyy H:i:s")
-	try(errs, "id", err)
+	try(errs, "updatedAt", err)
 
 	err = v.Var(r.Form.Get("variants"), "required")
-	try(errs, "id", err)
+	try(errs, "variants", err)
 
 	return errs
 }
