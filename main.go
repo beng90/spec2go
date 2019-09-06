@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"log"
+	"os"
+	"text/template"
 )
 
 const (
@@ -11,50 +14,88 @@ const (
 	SpecRequestBody = "requestBody"
 )
 
+type Validator struct {
+	Name       string
+	Parameters map[string]*Parameter
+}
+
 func main() {
 	file, err := ioutil.ReadFile("api.yml")
 	if err != nil {
 		panic(err)
 	}
 
+	validators := []Validator{}
 	data := yaml.MapSlice{}
 	yaml.Unmarshal(file, &data)
 
 	//fmt.Println(data)
 
 	path := []string{}
-	walk(data, path)
+	walk(&validators, data, path)
+
+	fmt.Println("validators", validators)
+
+	templateFiles := []string{
+		"validators.tpl",
+	}
+
+	t := template.Must(template.New("validators.tpl").ParseFiles(templateFiles...))
+
+	f, err := os.Create("example/generated.go")
+	if err != nil {
+		log.Println("create file: ", err)
+		return
+	}
+
+	err = t.Execute(f, validators)
+	if err != nil {
+		log.Println("executing template:", err)
+
+		os.Exit(1)
+	}
+
+	_ = f.Close()
 }
 
-func walk(spec yaml.MapSlice, path []string) {
+func walk(validators *[]Validator, spec yaml.MapSlice, path []string) {
 	for _, node := range spec {
-		path = append(path, node.Key.(string))
 		switch nodeVal := node.Value.(type) {
 		case string:
+			if node.Key.(string) == "operationId" {
+				path = append(path, node.Value.(string))
+			}
 			//fmt.Println(path)
 			//fmt.Println(node.Key, node, path)
 		case yaml.MapSlice:
+			//path = append(path, node.Key.(string))
+
 			if node.Key == SpecRequestBody {
 				//fmt.Println(node.Key, node.Value)
 				fmt.Println("generateValidatorsFromRequestBody", path)
 				parameters := getRequestBodyParameters(nodeVal, path)
-				//fmt.Println("parameters", parameters)
-				generateValidatorsFromRequestBody(parameters)
+				*validators = append(*validators, Validator{
+					Name:       path[0] + "Validate",
+					Parameters: parameters,
+				})
+				fmt.Println("path", path)
+				//generateValidatorsFromRequestBody(parameters)
 			}
-			walk(nodeVal, path)
+			walk(validators, nodeVal, path)
+			//path = nil
 		case []interface{}:
 			switch node.Key {
 			case SpecParameters:
 				fmt.Println("generateValidatorsFromParameters", path)
-				parameters := getParameters(nodeVal, path)
-				generateValidatorsFromParameters(parameters)
+				//parameters := getParameters(nodeVal, path)
+				//generateValidatorsFromParameters(parameters)
 			}
 		default:
 			//fmt.Printf("%T\n", node)
 			//fmt.Println(node)
 			//fmt.Println(node.Key, reflect.TypeOf(node).String())
 		}
-		path = nil
+		//path = nil
 	}
 }
 
@@ -69,6 +110,18 @@ type Parameter struct {
 	Pattern     string
 	Min         *float64
 	Max         *float64
+}
+
+func (p *Parameter) Rules() (rules []string) {
+	if p.Required {
+		rules = append(rules, "required")
+	}
+
+	if p.Min != nil {
+		rules = append(rules, fmt.Sprintf(`min=%.2f`, *p.Min))
+	}
+
+	return
 }
 
 func getSchema(param *Parameter, schema yaml.MapSlice) {
@@ -100,130 +153,5 @@ func getSchema(param *Parameter, schema yaml.MapSlice) {
 				param.Max = &v
 			}
 		}
-	}
-}
-
-func getParameter(data yaml.MapSlice) Parameter {
-	param := &Parameter{}
-
-	for _, property := range data {
-		switch property.Key {
-		case "schema":
-			getSchema(param, property.Value.(yaml.MapSlice))
-		case "name":
-			param.Name = property.Value.(string)
-		case "in":
-			param.In = property.Value.(string)
-		case "required":
-			param.Required = property.Value.(bool)
-		case "description":
-			param.Description = property.Value.(string)
-		}
-	}
-
-	//fmt.Printf("property %v\n", param)
-
-	return *param
-}
-
-func getParameters(data []interface{}, path []string) (parameters []Parameter) {
-	for _, param := range data {
-		switch paramVal := param.(type) {
-		case yaml.MapSlice:
-			parameter := getParameter(paramVal)
-			path = append(path, parameter.Name)
-			parameters = append(parameters, parameter)
-		}
-	}
-
-	return
-}
-
-func generateValidatorsFromParameters(params []Parameter) {
-	for _, param := range params {
-		if param.Min != nil {
-			fmt.Printf("param %v\n", param)
-		}
-	}
-}
-
-func getRequestBodyParameter(data yaml.MapSlice, paramName string, requiredFields map[string]string) (param Parameter) {
-	param.Name = paramName
-
-	_, isRequired := requiredFields[param.Name]
-	param.Required = isRequired
-
-	for _, property := range data {
-		switch property.Key {
-		case "description":
-			param.Description = property.Value.(string)
-		case "type":
-			param.Type = property.Value.(string)
-		case "format":
-			param.Format = property.Value.(string)
-		case "items":
-			for _, arrayItem := range property.Value.(yaml.MapSlice) {
-				switch arrayItem.Key {
-				case "type":
-					param.ArrayType = arrayItem.Value.(string)
-				case "$ref":
-					fmt.Println("$ref is not supported yet")
-				}
-				//param.Format = property.Value.(string)
-			}
-		}
-	}
-
-	getSchema(&param, data)
-
-	//fmt.Printf("property %s\n", param)
-
-	return
-}
-
-func getRequestBodyParameters(data yaml.MapSlice, path []string) (parameters []Parameter) {
-	for _, content := range data {
-		switch content.Key {
-		case "content":
-			switch content.Value.(yaml.MapSlice)[0].Key {
-			case "application/json":
-				parameters = getJSONContentProperties(content.Value.(yaml.MapSlice)[0].Value.(yaml.MapSlice))
-			}
-		case "$ref":
-			// TODO: add handler for reference type
-			fmt.Println("$ref is not supported yet")
-		}
-	}
-
-	return
-}
-
-func getJSONContentProperties(content yaml.MapSlice) (properties []Parameter) {
-	// go to "schema" node
-	requiredFields := make(map[string]string)
-
-	for _, node := range content[0].Value.(yaml.MapSlice) {
-		switch node.Key {
-		// TODO: Get required fields at first
-		case "required":
-			for _, fieldName := range node.Value.([]interface{}) {
-				requiredFields[fieldName.(string)] = fieldName.(string)
-			}
-		case "properties":
-			for _, property := range node.Value.(yaml.MapSlice) {
-				param := getRequestBodyParameter(property.Value.(yaml.MapSlice), property.Key.(string), requiredFields)
-				properties = append(properties, param)
-			}
-		}
-		//fmt.Println(node.Key, node.Value)
-	}
-
-	//fmt.Println("properties", properties)
-	return properties
-}
-
-func generateValidatorsFromRequestBody(params []Parameter) {
-	for _, param := range params {
-		fmt.Println("param", param)
 	}
 }

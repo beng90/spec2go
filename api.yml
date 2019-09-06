@@ -69,9 +69,6 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - name
-                - photoUrls
               properties:
                 id:
                   type: integer
@@ -105,22 +102,26 @@ paths:
                     - available
                     - pending
                     - sold
-  /pet:
-    post:
-      tags:
-        - pet
-      summary: Add a new pet to the store
-      description: ''
-      operationId: addPet
-      responses:
-        '405':
-          description: Invalid input
-      security:
-        - petstore_auth:
-            - 'write:pets'
-            - 'read:pets'
-      requestBody:
-        $ref: '#/components/requestBodies/Pet'
+              required:
+                - id
+                - name
+                - photoUrls
+#  /pet:
+#    post:
+#      tags:
+#        - pet
+#      summary: Add a new pet to the store
+#      description: ''
+#      operationId: addPetSecond
+#      responses:
+#        '405':
+#          description: Invalid input
+#      security:
+#        - petstore_auth:
+#            - 'write:pets'
+#            - 'read:pets'
+#      requestBody:
+#        $ref: '#/components/requestBodies/Pet'
 #    put:
 #      tags:
 #        - pet
