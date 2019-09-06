@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"text/template"
 )
 
@@ -20,7 +21,7 @@ type Validator struct {
 }
 
 func main() {
-	file, err := ioutil.ReadFile("api.yml")
+	file, err := ioutil.ReadFile("api.dereferenced.yml")
 	if err != nil {
 		panic(err)
 	}
@@ -75,7 +76,7 @@ func walk(validators *[]Validator, spec yaml.MapSlice, path []string) {
 				fmt.Println("generateValidatorsFromRequestBody", path)
 				parameters := getRequestBodyParameters(nodeVal, path)
 				*validators = append(*validators, Validator{
-					Name:       path[0] + "Validate",
+					Name:       strings.Title(path[0]) + "Validate",
 					Parameters: parameters,
 				})
 				fmt.Println("path", path)
@@ -99,31 +100,6 @@ func walk(validators *[]Validator, spec yaml.MapSlice, path []string) {
 	}
 }
 
-type Parameter struct {
-	Name        string
-	In          string
-	Required    bool
-	Description string
-	Type        string
-	ArrayType   string
-	Format      string
-	Pattern     string
-	Min         *float64
-	Max         *float64
-}
-
-func (p *Parameter) Rules() (rules []string) {
-	if p.Required {
-		rules = append(rules, "required")
-	}
-
-	if p.Min != nil {
-		rules = append(rules, fmt.Sprintf(`min=%.2f`, *p.Min))
-	}
-
-	return
-}
-
 func getSchema(param *Parameter, schema yaml.MapSlice) {
 	for _, schemaProperty := range schema {
 		//fmt.Println("schemaProperty", schemaProperty.Key, schemaProperty.Value)
@@ -137,7 +113,7 @@ func getSchema(param *Parameter, schema yaml.MapSlice) {
 		case "minimum", "minLength":
 			switch schemaProperty.Value.(type) {
 			case int:
-				v := float64(schemaProperty.Value.(float64))
+				v := float64(schemaProperty.Value.(int))
 				param.Min = &v
 			case float64:
 				v := float64(schemaProperty.Value.(float64))
