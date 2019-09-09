@@ -51,9 +51,6 @@ func (j jsonMap) getVal(exploded []string, i int, prev interface{}, data *interf
 		j.getVal(exploded, i+1, v[exploded[i]], data)
 	case []interface{}:
 		j.getVal(exploded, i, v[0], data)
-		//default:
-		//	fmt.Printf("Type %T\n", v)
-		//	fmt.Println("val", v)
 	}
 }
 
@@ -90,6 +87,51 @@ func AddOfferRequestValidate(v *validator.Validate, r *http.Request) ValidationE
 	requestBody := getRequestBody(r)
 	errs := make(ValidationErrors)
 
+	err = v.Var(requestBody.Get("categoryId"), "required")
+	try(errs, "categoryId", err)
+
+	err = v.Var(requestBody.Get("categoryId"), "numeric")
+	try(errs, "categoryId", err)
+
+	err = v.Var(requestBody.Get("categoryId"), "min=1")
+	try(errs, "categoryId", err)
+
+	err = v.Var(requestBody.Get("categoryId"), "max=4294967295")
+	try(errs, "categoryId", err)
+
+	err = v.Var(requestBody.Get("categoryTree"), "required")
+	try(errs, "categoryTree", err)
+
+	err = v.Var(requestBody.Get("categoryTree.id"), "required")
+	try(errs, "categoryTree.id", err)
+
+	err = v.Var(requestBody.Get("categoryTree.id"), "numeric")
+	try(errs, "categoryTree.id", err)
+
+	err = v.Var(requestBody.Get("categoryTree.id"), "min=1")
+	try(errs, "categoryTree.id", err)
+
+	err = v.Var(requestBody.Get("categoryTree.id"), "max=4294967295")
+	try(errs, "categoryTree.id", err)
+
+	err = v.Var(requestBody.Get("categoryTree.name"), "required")
+	try(errs, "categoryTree.name", err)
+
+	err = v.Var(requestBody.Get("categoryTree.name"), "max=128")
+	try(errs, "categoryTree.name", err)
+
+	err = v.Var(requestBody.Get("createdAt"), "required")
+	try(errs, "createdAt", err)
+
+	err = v.Var(requestBody.Get("createdAt"), "ISO8601")
+	try(errs, "createdAt", err)
+
+	err = v.Var(requestBody.Get("expireAt"), "required")
+	try(errs, "expireAt", err)
+
+	err = v.Var(requestBody.Get("expireAt"), "ISO8601")
+	try(errs, "expireAt", err)
+
 	err = v.Var(requestBody.Get("id"), "required")
 	try(errs, "id", err)
 
@@ -102,8 +144,71 @@ func AddOfferRequestValidate(v *validator.Validate, r *http.Request) ValidationE
 	err = v.Var(requestBody.Get("id"), "max=4294967295")
 	try(errs, "id", err)
 
+	err = v.Var(requestBody.Get("productId"), "required")
+	try(errs, "productId", err)
+
+	err = v.Var(requestBody.Get("productId"), "numeric")
+	try(errs, "productId", err)
+
+	err = v.Var(requestBody.Get("productId"), "min=1")
+	try(errs, "productId", err)
+
+	err = v.Var(requestBody.Get("productId"), "max=99999999999999")
+	try(errs, "productId", err)
+
+	err = v.Var(requestBody.Get("productName"), "min=1")
+	try(errs, "productName", err)
+
+	err = v.Var(requestBody.Get("productName"), "max=255")
+	try(errs, "productName", err)
+
+	err = v.Var(requestBody.Get("productTypeId"), "required")
+	try(errs, "productTypeId", err)
+
+	err = v.Var(requestBody.Get("productTypeId"), "numeric")
+	try(errs, "productTypeId", err)
+
+	err = v.Var(requestBody.Get("productTypeId"), "min=1")
+	try(errs, "productTypeId", err)
+
+	err = v.Var(requestBody.Get("productTypeId"), "max=4294967295")
+	try(errs, "productTypeId", err)
+
+	err = v.Var(requestBody.Get("updatedAt"), "required")
+	try(errs, "updatedAt", err)
+
+	err = v.Var(requestBody.Get("updatedAt"), "ISO8601")
+	try(errs, "updatedAt", err)
+
 	err = v.Var(requestBody.Get("variants"), "required")
 	try(errs, "variants", err)
+
+	err = v.Var(requestBody.Get("variants.additionalInfo.id"), "required")
+	try(errs, "variants.additionalInfo.id", err)
+
+	err = v.Var(requestBody.Get("variants.additionalInfo.id"), "max=32")
+	try(errs, "variants.additionalInfo.id", err)
+
+	err = v.Var(requestBody.Get("variants.additionalInfo.value"), "required")
+	try(errs, "variants.additionalInfo.value", err)
+
+	err = v.Var(requestBody.Get("variants.additionalInfo.value"), "max=64")
+	try(errs, "variants.additionalInfo.value", err)
+
+	err = v.Var(requestBody.Get("variants.attributes"), "required")
+	try(errs, "variants.attributes", err)
+
+	err = v.Var(requestBody.Get("variants.attributes.id"), "required")
+	try(errs, "variants.attributes.id", err)
+
+	err = v.Var(requestBody.Get("variants.attributes.id"), "max=32")
+	try(errs, "variants.attributes.id", err)
+
+	err = v.Var(requestBody.Get("variants.attributes.value"), "required")
+	try(errs, "variants.attributes.value", err)
+
+	err = v.Var(requestBody.Get("variants.attributes.value"), "max=64")
+	try(errs, "variants.attributes.value", err)
 
 	err = v.Var(requestBody.Get("variants.content"), "required")
 	try(errs, "variants.content", err)
@@ -125,6 +230,27 @@ func AddOfferRequestValidate(v *validator.Validate, r *http.Request) ValidationE
 
 	err = v.Var(requestBody.Get("variants.content.language"), "max=2")
 	try(errs, "variants.content.language", err)
+
+	err = v.Var(requestBody.Get("variants.delivery"), "required")
+	try(errs, "variants.delivery", err)
+
+	err = v.Var(requestBody.Get("variants.delivery.dispatchTime"), "required")
+	try(errs, "variants.delivery.dispatchTime", err)
+
+	err = v.Var(requestBody.Get("variants.delivery.dispatchTime"), "numeric")
+	try(errs, "variants.delivery.dispatchTime", err)
+
+	err = v.Var(requestBody.Get("variants.delivery.dispatchTime"), "min=1")
+	try(errs, "variants.delivery.dispatchTime", err)
+
+	err = v.Var(requestBody.Get("variants.delivery.dispatchTime"), "max=64")
+	try(errs, "variants.delivery.dispatchTime", err)
+
+	err = v.Var(requestBody.Get("variants.delivery.shippingTemplateId"), "required")
+	try(errs, "variants.delivery.shippingTemplateId", err)
+
+	err = v.Var(requestBody.Get("variants.delivery.shippingTemplateId"), "uuid")
+	try(errs, "variants.delivery.shippingTemplateId", err)
 
 	err = v.Var(requestBody.Get("variants.inventory"), "required")
 	try(errs, "variants.inventory", err)
@@ -152,6 +278,12 @@ func AddOfferRequestValidate(v *validator.Validate, r *http.Request) ValidationE
 
 	err = v.Var(requestBody.Get("variants.inventory.sold"), "max=4294967295")
 	try(errs, "variants.inventory.sold", err)
+
+	err = v.Var(requestBody.Get("variants.isEnabled"), "required")
+	try(errs, "variants.isEnabled", err)
+
+	err = v.Var(requestBody.Get("variants.isEnabled"), "oneof:true false")
+	try(errs, "variants.isEnabled", err)
 
 	err = v.Var(requestBody.Get("variants.media"), "required")
 	try(errs, "variants.media", err)

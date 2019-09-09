@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type ValidationErrors map[string][]VError

@@ -32,7 +32,7 @@ const (
 var SchemaTypeToRule = map[SchemaType]RuleType{
 	TypeNumber:  "numeric",
 	TypeInteger: "numeric",
-	TypeBoolean: "bool",
+	TypeBoolean: "oneof:true false",
 }
 
 var SchemaFormatToRule = map[SchemaFormat]RuleFormat{
