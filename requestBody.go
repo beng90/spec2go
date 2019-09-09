@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"strings"
 )
 
 func getRequestBodyParameter(data yaml.MapSlice, paramName string) (param Parameter) {
@@ -68,8 +69,8 @@ func getJSONContentProperties(content yaml.MapSlice) map[string]*Parameter {
 			}
 		case "properties":
 			for _, property := range node.Value.(yaml.MapSlice) {
-				param := getRequestBodyParameter(property.Value.(yaml.MapSlice), property.Key.(string))
-				properties[param.Name] = &param
+				path := []string{}
+				properties = getJSONProperties(properties, property, path)
 			}
 		}
 		//fmt.Println(node.Key, node.Value)
@@ -79,8 +80,58 @@ func getJSONContentProperties(content yaml.MapSlice) map[string]*Parameter {
 	return properties
 }
 
-func generateValidatorsFromRequestBody(params map[string]*Parameter) {
-	for _, param := range params {
-		fmt.Printf("param %#v\n", param)
+func getJSONProperties(properties map[string]*Parameter, node interface{}, path []string) map[string]*Parameter {
+	switch element := node.(type) {
+	case yaml.MapItem:
+		data := element.Value.(yaml.MapSlice)
+		path = append(path, element.Key.(string))
+		paramName := strings.Join(path, ".")
+		param := getRequestBodyParameter(data, paramName)
+		if val, ok := properties[paramName]; ok {
+			param.Required = val.Required
+		}
+
+		//fmt.Println("param.Name", paramName)
+
+		for _, embeded := range data {
+			switch embeded.Key {
+			case "properties":
+				//fmt.Println("param.Name2", param.Name)
+				param.IsObject = true
+				getJSONProperties(properties, data, path)
+			case "items":
+				getJSONProperties(properties, embeded.Value, path)
+			}
+		}
+
+		properties[param.Name] = &param
+	case yaml.MapSlice:
+		//fmt.Println("222")
+		//fmt.Printf("Type: %T\n", element)
+
+		for _, embeded := range element {
+			//fmt.Println("333", embeded.Key)
+			switch embeded.Key {
+			case "properties":
+				for _, property := range embeded.Value.(yaml.MapSlice) {
+					//fmt.Println("property", property.Key)
+					//fmt.Println("path", path)
+					getJSONProperties(properties, property, path)
+				}
+			case "required":
+				for _, fieldName := range embeded.Value.([]interface{}) {
+					fieldPath := append(path, fieldName.(string))
+					paramName := strings.Join(fieldPath, ".")
+					fmt.Println("fieldName", paramName)
+					if _, ok := properties[paramName]; ok {
+						properties[paramName].Required = true
+						//} else {
+						//	properties[fieldName.(string)] = &Parameter{Required: true}
+					}
+				}
+			}
+		}
 	}
+
+	return properties
 }

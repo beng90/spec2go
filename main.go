@@ -35,7 +35,7 @@ func main() {
 	path := []string{}
 	walk(&validators, data, path)
 
-	fmt.Println("validators", validators)
+	//fmt.Println("validators", validators)
 
 	templateFiles := []string{
 		"validators.tpl",
@@ -43,7 +43,7 @@ func main() {
 
 	t := template.Must(template.New("validators.tpl").ParseFiles(templateFiles...))
 
-	f, err := os.Create("example/generated.go")
+	f, err := os.Create("validators/generated.go")
 	if err != nil {
 		log.Println("create file: ", err)
 		return
@@ -79,7 +79,11 @@ func walk(validators *[]Validator, spec yaml.MapSlice, path []string) {
 					Name:       strings.Title(path[0]) + "Validate",
 					Parameters: parameters,
 				})
-				fmt.Println("path", path)
+
+				for _, pam := range parameters {
+					fmt.Println()
+					fmt.Printf("%#v\n", pam)
+				}
 				//generateValidatorsFromRequestBody(parameters)
 			}
 			walk(validators, nodeVal, path)
@@ -87,7 +91,7 @@ func walk(validators *[]Validator, spec yaml.MapSlice, path []string) {
 		case []interface{}:
 			switch node.Key {
 			case SpecParameters:
-				fmt.Println("generateValidatorsFromParameters", path)
+				//fmt.Println("generateValidatorsFromParameters", path)
 				//parameters := getParameters(nodeVal, path)
 				//generateValidatorsFromParameters(parameters)
 			}

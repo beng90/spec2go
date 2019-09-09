@@ -36,8 +36,8 @@ var SchemaTypeToRule = map[SchemaType]RuleType{
 }
 
 var SchemaFormatToRule = map[SchemaFormat]RuleFormat{
-	FormatDate:     "date",
-	FormatDateTime: "date:dd-mm-yyyy H:i:s",
+	FormatDate:     "ISO8601",
+	FormatDateTime: "ISO8601",
 	FormatEmail:    "email",
 	FormatUuid:     "uuid",
 	FormatUri:      "url",
@@ -56,6 +56,7 @@ type Parameter struct {
 	Pattern     string
 	Min         *float64
 	Max         *float64
+	IsObject    bool
 }
 
 func (p *Parameter) Rules() (rules []string) {
@@ -72,11 +73,11 @@ func (p *Parameter) Rules() (rules []string) {
 	}
 
 	if p.Min != nil {
-		rules = append(rules, fmt.Sprintf(`min=%.2f`, *p.Min))
+		rules = append(rules, fmt.Sprintf(`min=%.f`, *p.Min))
 	}
 
 	if p.Max != nil {
-		rules = append(rules, fmt.Sprintf(`max=%.2f`, *p.Max))
+		rules = append(rules, fmt.Sprintf(`max=%.f`, *p.Max))
 	}
 
 	return
