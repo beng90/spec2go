@@ -86,6 +86,7 @@ func getJSONProperties(properties map[string]*Parameter, node interface{}, path 
 		data := element.Value.(yaml.MapSlice)
 		path = append(path, element.Key.(string))
 		paramName := strings.Join(path, ".")
+		//fmt.Println("paramName", paramName)
 		param := getRequestBodyParameter(data, paramName)
 		if val, ok := properties[paramName]; ok {
 			param.Required = val.Required
@@ -99,7 +100,11 @@ func getJSONProperties(properties map[string]*Parameter, node interface{}, path 
 				//fmt.Println("param.Name2", param.Name)
 				param.IsObject = true
 				getJSONProperties(properties, data, path)
+			//case "description":
+			//	fmt.Println("desc", embeded.Value)
 			case "items":
+				path[len(path)-1] = path[len(path)-1] + "[]"
+				fmt.Println("param.Name", path)
 				getJSONProperties(properties, embeded.Value, path)
 			}
 		}
@@ -112,6 +117,13 @@ func getJSONProperties(properties map[string]*Parameter, node interface{}, path 
 		for _, embeded := range element {
 			//fmt.Println("333", embeded.Key)
 			switch embeded.Key {
+			case "type":
+				if embeded.Value.(string) != "object" && embeded.Value.(string) != "array" {
+					paramName := strings.Join(path, ".")
+					param := getRequestBodyParameter(element, paramName)
+					properties[paramName] = &param
+					break
+				}
 			case "properties":
 				for _, property := range embeded.Value.(yaml.MapSlice) {
 					//fmt.Println("property", property.Key)
@@ -122,11 +134,8 @@ func getJSONProperties(properties map[string]*Parameter, node interface{}, path 
 				for _, fieldName := range embeded.Value.([]interface{}) {
 					fieldPath := append(path, fieldName.(string))
 					paramName := strings.Join(fieldPath, ".")
-					fmt.Println("fieldName", paramName)
 					if _, ok := properties[paramName]; ok {
 						properties[paramName].Required = true
-						//} else {
-						//	properties[fieldName.(string)] = &Parameter{Required: true}
 					}
 				}
 			}

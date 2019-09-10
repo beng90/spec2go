@@ -80,10 +80,10 @@ func walk(validators *[]Validator, spec yaml.MapSlice, path []string) {
 					Parameters: parameters,
 				})
 
-				for _, pam := range parameters {
-					fmt.Println()
-					fmt.Printf("%#v\n", pam)
-				}
+				//for _, pam := range parameters {
+				//	fmt.Println()
+				//	fmt.Printf("%#v\n", pam)
+				//}
 				//generateValidatorsFromRequestBody(parameters)
 			}
 			walk(validators, nodeVal, path)

@@ -1,0 +1,1597 @@
+openapi: 3.0.2
+info:
+  title: Integration API - G2A.COM
+  version: 3.0.0
+  description: |
+    API for selling products on g2a.com
+
+    ## Changelog
+    TODO: introduce changelog
+servers:
+  - url: 'https://sandboxapi.g2a.com/v2'
+    description: Sandbox server for testing
+tags:
+  - name: Offers
+  - name: Auth
+paths:
+  /offers:
+    post:
+      tags:
+        - Offers
+      summary: Add offer request
+      description: Creates new offer and returns jobId
+      operationId: addOffer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                categoryId:
+                  type: string
+                  maxLength: 16
+                  description: Category identifier
+                  pattern: ^\d+_\d+$
+                  example: '435_12'
+                defaultLanguage:
+                  type: string
+                  maxLength: 2
+                  minLength: 2
+                  description: Default language in variants content
+                  pattern: '^[a-zA-Z]{2}$'
+                  example: pl
+                productName:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  description: Name of product
+                  example: Samsung S10e
+                brand:
+                  type: string
+                  description: Brand of product
+                  example: Xiaomi
+                additionalInfo:
+                  type: array
+                  uniqueItems: true
+                  description: Optional attributes to describe product
+                  items:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      id:
+                        type: string
+                        description: Feature identifier
+                      valuesIds:
+                        type: array
+                        description: Array of ids
+                        items:
+                          type: string
+                          description: Feature value retrieved from list
+#                    required:
+#                      - id
+#                      - valuesIds
+                  example:
+                    - id: '111'
+                      valuesIds:
+                        - '34'
+                        - '54'
+                    - id: '222'
+                      valuesIds:
+                        - '3'
+                variants:
+                  type: array
+                  description: Currently only one variant allowed
+                  maxItems: 1
+                  items:
+                    type: object
+                    properties:
+                      price:
+                        type: string
+                        description: Price for product in EUR
+                        example: '5.98'
+                      inventory:
+                        type: object
+                        description: Offer inventory
+                        properties:
+                          size:
+                            type: integer
+                            format: int32
+                            minimum: 1
+                            maximum: 4294967295
+                            description: Number of items to sell
+                            example: 999
+                          sold:
+                            type: integer
+                            format: int32
+                            minimum: 1
+                            maximum: 4294967295
+                            description: Number of sold items
+                            example: 15
+                            readOnly: true
+                        required:
+                          - size
+                          - sold
+                      content:
+                        type: array
+                        description: Array of content in different languages. "en" is required
+                        minItems: 1
+                        items:
+                          type: object
+                          properties:
+                            language:
+                              type: string
+                              minLength: 2
+                              maxLength: 2
+                              description: Language of content
+                              example: en
+                            description:
+                              type: string
+                              minLength: 1
+                              maxLength: 1024
+                              description: Detailed description of product
+                              example: Example description with product details...
+                          required:
+                            - language
+                            - description
+                      isEnabled:
+                        type: boolean
+                        description: Is product enabled
+                        example: true
+                      ean:
+                        type: string
+                        minLength: 13
+                        maxLength: 13
+                        pattern: '^(\d{13})?$'
+                        description: |
+                          European Article Number see more: https://en.wikipedia.org/wiki/International_Article_Number
+                          Brand name is obligatory if EAN is specified
+                        example: XXX
+                      sku:
+                        type: string
+                        description: Product variant sku
+                      tags:
+                        type: array
+                        uniqueItems: true
+                        description: Optional attributes to describe product
+                        items:
+                          type: object
+                          description: Variant tag
+                          additionalProperties: false
+                          properties:
+                            id:
+                              type: string
+                              description: Feature identifier
+                            valueId:
+                              type: string
+                              description: Feature value retrieved from list
+#                          required:
+#                            - id
+#                            - valueId
+                        example:
+                          - id: '111'
+                            valueId: '423'
+                          - id: '222'
+                            valueId: '432'
+                      media:
+                        type: object
+                        properties:
+                          images:
+                            type: array
+                            minItems: 1
+                            items:
+                              type: object
+                              additionalProperties: false
+                              properties:
+                                url:
+                                  type: string
+                                  format: uri
+                                  maxLength: 255
+                                  description: Absolute url to image
+                                sortOrder:
+                                  type: integer
+                                  format: int32
+                                  minimum: 1
+                                  maximum: 64
+                                  default: 0
+                                  description: Sort order
+                              required:
+                                - url
+                            example:
+                              - url: 'https://images.g2a.com/newlayout/323x433/1x1x0/f0d156492637/5d1ca6a47e696c05dd4f1e92'
+                                sortOrder: 0
+                              - url: 'https://images.g2a.com/newlayout/323x433/1x1x0/f0d156492637/fs234gsfw34rbnryyudgcxbq'
+                                sortOrder: 1
+                        required:
+                          - images
+                      delivery:
+                        type: object
+                        additionalProperties: false
+                        properties:
+                          dispatchTime:
+                            type: integer
+                            format: int32
+                            minimum: 1
+                            maximum: 64
+                            description: Time of dispatching
+                            example: 7
+                          shippingTemplateId:
+                            type: string
+                            format: uuid
+                            description: Shipping template identifier
+                            example: 5839c1a6-293f-43bf-ba8b-8a3cb19f4ea5
+                          additionalInfo:
+                            type: string
+                            description: Additional info for delivery
+                        required:
+                          - dispatchTime
+                          - shippingTemplateId
+                    required:
+                      - price
+                      - inventory
+                      - content
+                      - isEnabled
+                      - media
+                      - delivery
+              required:
+                - categoryId
+                - productTypeId
+                - productName
+                - variants
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                title: AddOfferResponse202
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      jobId:
+                        type: string
+                        format: uuid
+                        minLength: 36
+                        maxLength: 36
+                        description: Request identifier
+                    required:
+                      - jobId
+                    example:
+                      jobId: 529d501a-26a8-4543-b3c2-828e3ad23db8
+                required:
+                  - data
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                title: BadRequest
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: Unauthorized
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+    get:
+      tags:
+        - Offers
+      summary: Get offers list
+      description: Returns offers list
+      operationId: getOffers
+      parameters:
+        - in: query
+          name: itemsPerPage
+          description: Number of items per page
+          schema:
+            type: integer
+            format: int32
+            enum:
+              - 10
+              - 20
+              - 50
+              - 100
+            default: 20
+        - in: query
+          name: page
+          description: Number of page starting with 1
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 99999
+            default: 1
+        - in: query
+          name: 'updatedAt[from]'
+          description: Filter by date of last update
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: GetOffers200
+                type: object
+                additionalProperties: false
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        id:
+                          type: string
+                          minLength: 1
+                          maxLength: 36
+                          description: Offer identifier
+                          example: '123456'
+                          readOnly: true
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: '2017-05-09T14:40:39.851Z'
+                          description: Date and time of creation
+                          readOnly: true
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: '2018-07-09T14:40:39.851Z'
+                          description: Date and time of last update
+                          readOnly: true
+                        expireAt:
+                          type: string
+                          format: date-time
+                          example: '2020-07-09T14:40:39.851Z'
+                          description: Date and time of expiration
+                          readOnly: true
+                        price:
+                          type: string
+                          description: Price for product in EUR
+                          example: '5.98'
+                        status:
+                          type: string
+                          description: Offer status
+                          enum:
+                            - active
+                            - inactive
+                        inventory:
+                          type: object
+                          description: Offer inventory
+                          properties:
+                            size:
+                              type: integer
+                              format: int32
+                              minimum: 1
+                              maximum: 4294967295
+                              description: Number of items to sell
+                              example: 999
+                            sold:
+                              type: integer
+                              format: int32
+                              minimum: 1
+                              maximum: 4294967295
+                              description: Number of sold items
+                              example: 15
+                              readOnly: true
+                          required:
+                            - size
+                            - sold
+                        product:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              minLength: 14
+                              maxLength: 14
+                              description: Product identifier
+                              example: '10000045649003'
+                              readOnly: true
+                            name:
+                              type: string
+                              minLength: 1
+                              maxLength: 255
+                              description: Name of product
+                              example: Samsung S10e
+                          required:
+                            - id
+                            - name
+                      required:
+                        - id
+                        - createdAt
+                        - updatedAt
+                        - expireAt
+                        - price
+                        - status
+                        - inventory
+                        - product
+                  meta:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        format: int32
+                        minimum: 1
+                        description: Number of current page
+                        example: 1
+                      itemsPerPage:
+                        type: integer
+                        format: int32
+                        description: Number of items per page
+                        example: 20
+                      totalResults:
+                        type: integer
+                        format: int32
+                        description: Numbers of all items in total
+                        example: 27
+                    required:
+                      - page
+                      - itemsPerPage
+                      - totalResults
+                required:
+                  - data
+                  - meta
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                title: BadRequest
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: Unauthorized
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+  '/jobs/{jobId}':
+    parameters:
+      - name: jobId
+        schema:
+          type: string
+          format: uuid
+          minLength: 36
+          maxLength: 36
+        in: path
+        required: true
+        description: Job identifier
+    get:
+      tags:
+        - Jobs
+      summary: Get job
+      description: Returns job status
+      operationId: getJob
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: GetJob200
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      jobId:
+                        type: string
+                        format: uuid
+                        description: Job identifier
+                        example: 529d501a-26a8-4543-b3c2-828e3ad23db8
+                      status:
+                        type: string
+                        enum:
+                          - pending
+                          - processing
+                          - complete
+                        description: Job status
+                        example: complete
+                      elements:
+                        type: array
+                        minItems: 1
+                        items:
+                          type: object
+                          properties:
+                            resourceId:
+                              type: string
+                              minLength: 36
+                              maxLength: 36
+                              format: uuid
+                              description: Resource identifier
+                              example: 5da7d0f3-862e-4de9-bb0b-f1b0b7c5ed38
+                              readOnly: true
+                            resourceType:
+                              type: string
+                              minLength: 1
+                              maxLength: 36
+                              description: Resource type
+                              example: offer
+                            status:
+                              type: string
+                              enum:
+                                - pending
+                                - processing
+                                - complete
+                              description: Request status
+                              example: complete
+                          required:
+                            - resourceId
+                            - resourceType
+                            - status
+                    required:
+                      - jobId
+                      - status
+                      - elements
+                required:
+                  - data
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                title: BadRequest
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: Unauthorized
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                title: NotFound
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+  '/offers/{offerId}':
+    parameters:
+      - name: offerId
+        schema:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 4294967295
+        in: path
+        required: true
+        description: Offer identifier
+    get:
+      tags:
+        - Offers
+      summary: Get offer
+      description: Returns offer details
+      operationId: getOffer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: GetOffer200
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      id:
+                        type: string
+                        minLength: 1
+                        maxLength: 36
+                        description: Offer identifier
+                        example: '123456'
+                        readOnly: true
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: '2017-05-09T14:40:39.851Z'
+                        description: Date and time of creation
+                        readOnly: true
+                      updatedAt:
+                        type: string
+                        format: date-time
+                        example: '2018-07-09T14:40:39.851Z'
+                        description: Date and time of last update
+                        readOnly: true
+                      expireAt:
+                        type: string
+                        format: date-time
+                        example: '2020-07-09T14:40:39.851Z'
+                        description: Date and time of expiration
+                        readOnly: true
+                      price:
+                        type: string
+                        description: Price for product in EUR
+                        example: '5.98'
+                      status:
+                        type: string
+                        description: Offer status
+                        enum:
+                          - active
+                          - inactive
+                      inventory:
+                        type: object
+                        description: Offer inventory
+                        properties:
+                          size:
+                            type: integer
+                            format: int32
+                            minimum: 1
+                            maximum: 4294967295
+                            description: Number of items to sell
+                            example: 999
+                          sold:
+                            type: integer
+                            format: int32
+                            minimum: 1
+                            maximum: 4294967295
+                            description: Number of sold items
+                            example: 15
+                            readOnly: true
+                        required:
+                          - size
+                          - sold
+                      product:
+                        type: object
+                        description: Product details
+                        properties:
+                          id:
+                            type: string
+                            minLength: 14
+                            maxLength: 14
+                            description: Product identifier
+                            example: '10000045649003'
+                            readOnly: true
+                          name:
+                            type: string
+                            minLength: 1
+                            maxLength: 255
+                            description: Name of product
+                            example: Samsung S10e
+                          categoryId:
+                            type: string
+                            description: Category identifier
+                            example: '483_12'
+                          categoryTree:
+                            type: array
+                            readOnly: true
+                            description: Category tree in ascending order - first is root
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  maxLength: 36
+                                  description: Category identifier
+                                  example: '12_345'
+                                name:
+                                  type: string
+                                  maxLength: 128
+                                  description: Category name
+                              required:
+                                - id
+                                - name
+                            example:
+                              - id: '123'
+                                name: Electronics
+                              - id: '345'
+                                name: Wearables
+                              - id: '483_12'
+                                name: Smart watches
+                          ean:
+                            type: string
+                            description: |
+                              European Article Number see more: https://en.wikipedia.org/wiki/International_Article_Number
+                              Brand name is obligatory if EAN is specified
+                            example: XXX
+                          sku:
+                            type: string
+                            description: Product sku
+                          description:
+                            type: string
+                            description: Product description
+                          additionalInfo:
+                            type: array
+                            uniqueItems: true
+                            description: Optional attributes to describe product
+                            items:
+                              type: object
+                              additionalProperties: false
+                              properties:
+                                id:
+                                  type: string
+                                  description: Feature identifier
+                                valuesIds:
+                                  type: array
+                                  description: Array of ids
+                                  items:
+                                    type: string
+                                    description: Feature value retrieved from list
+                              required:
+                                - id
+                                - valuesIds
+                            example:
+                              - id: '111'
+                                valuesIds:
+                                  - '34'
+                                  - '54'
+                              - id: '222'
+                                valuesIds:
+                                  - '3'
+                          tags:
+                            type: array
+                            uniqueItems: true
+                            description: Attributes to create product variant
+                            items:
+                              type: object
+                              description: Variant tag
+                              additionalProperties: false
+                              properties:
+                                id:
+                                  type: string
+                                  description: Feature identifier
+                                valueId:
+                                  type: string
+                                  description: Feature value retrieved from list
+                              required:
+                                - id
+                                - valueId
+                            example:
+                              - id: '111'
+                                valueId: '423'
+                              - id: '222'
+                                valueId: '432'
+                          media:
+                            type: object
+                            properties:
+                              images:
+                                type: array
+                                minItems: 1
+                                items:
+                                  type: object
+                                  additionalProperties: false
+                                  properties:
+                                    url:
+                                      type: string
+                                      format: uri
+                                      maxLength: 255
+                                      description: Absolute url to image
+                                    sortOrder:
+                                      type: integer
+                                      format: int32
+                                      minimum: 1
+                                      maximum: 64
+                                      default: 0
+                                      description: Sort order
+                                  required:
+                                    - url
+                                example:
+                                  - url: 'https://images.g2a.com/newlayout/323x433/1x1x0/f0d156492637/5d1ca6a47e696c05dd4f1e92'
+                                    sortOrder: 0
+                                  - url: 'https://images.g2a.com/newlayout/323x433/1x1x0/f0d156492637/fs234gsfw34rbnryyudgcxbq'
+                                    sortOrder: 1
+                            required:
+                              - images
+                          delivery:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              dispatchTime:
+                                type: integer
+                                format: int32
+                                minimum: 1
+                                maximum: 64
+                                description: Time of dispatching
+                                example: 7
+                              shippingTemplateId:
+                                type: string
+                                format: uuid
+                                description: Shipping template identifier
+                                example: 5839c1a6-293f-43bf-ba8b-8a3cb19f4ea5
+                              additionalInfo:
+                                type: string
+                                description: Additional info for delivery
+                            required:
+                              - dispatchTime
+                              - shippingTemplateId
+                        required:
+                          - id
+                          - name
+                          - categoryId
+                          - categoryTree
+                          - ean
+                          - sku
+                          - description
+                          - media
+                          - delivery
+                    required:
+                      - id
+                      - createdAt
+                      - updatedAt
+                      - expireAt
+                      - price
+                      - status
+                      - inventory
+                      - product
+                required:
+                  - data
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                title: BadRequest
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: Unauthorized
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                title: NotFound
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+  /products/categories:
+    get:
+      tags:
+        - Product Categories
+      summary: Get categories list
+      description: Returns list of available categories
+      operationId: getProductCategories
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: GetCategories200
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - name
+                      properties:
+                        id:
+                          type: string
+                          maxLength: 36
+                          description: Category identifier
+                          example: '123'
+                        name:
+                          type: string
+                          maxLength: 128
+                          description: Category name
+                required:
+                  - data
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                title: BadRequest
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: Unauthorized
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+  /products/features:
+    get:
+      tags:
+        - Product Features
+      summary: Get features
+      description: Returns list of available features for product
+      operationId: getProductFeatures
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: GetProductFeatures200
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      description: Feature option details
+                      required:
+                        - id
+                        - name
+                        - isVariantFeature
+                        - categoriesIds
+                      properties:
+                        id:
+                          type: string
+                          description: Feature identifier
+                          example: '123'
+                        name:
+                          type: string
+                          description: Feature name
+                          example: Color
+                        isVariantFeature:
+                          type: boolean
+                          description: Determine if feature can be used as variant tag
+                        categoriesIds:
+                          type: array
+                          description: List of categories identifiers related to
+                          items:
+                            type: string
+                            description: Category identifier
+                            example: '483_12'
+                required:
+                  - data
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                title: BadRequest
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: Unauthorized
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                title: NotFound
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+  '/products/features/{featureId}':
+    parameters:
+      - name: featureId
+        schema:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 4294967295
+        in: path
+        required: true
+        description: Feature identifier
+    get:
+      tags:
+        - Product Features
+      summary: Get feature details
+      description: Returns product feature details with available options
+      operationId: getProductFeaturesOptions
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: GetProductFeature200
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: Product feature details with available options
+                    properties:
+                      id:
+                        type: string
+                        description: Feature identifier
+                        example: '100'
+                      name:
+                        type: string
+                        description: Feature name
+                        example: Colour
+                      options:
+                        type: array
+                        description: Available options for product feature
+                        items:
+                          type: object
+                          description: Options list for product feature
+                          properties:
+                            id:
+                              type: string
+                              maxLength: 36
+                              description: Option identifier
+                              example: '87'
+                            name:
+                              type: string
+                              maxLength: 64
+                              description: Option name
+                              example: Yellow
+                          required:
+                            - id
+                            - name
+                    required:
+                      - id
+                      - name
+                      - options
+                required:
+                  - data
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                title: BadRequest
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: Unauthorized
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                title: NotFound
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+  /shippings:
+    get:
+      tags:
+        - Shippings
+      summary: Get shippings details
+      description: Get user shippings with details
+      operationId: getShippings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: GetShippingTemplates200
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          minLength: 36
+                          maxLength: 36
+                          format: uuid
+                          description: Shipping identifier
+                          example: 8b2c5a93-5be9-4f34-a7d3-b3697267f37f
+                        name:
+                          type: string
+                          description: Shipping name
+                          example: Shipping for phones
+                        methods:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                minLength: 36
+                                maxLength: 36
+                                format: uuid
+                                description: Shipping method identifier
+                                example: 8b2c5a93-5be9-4f34-a7d3-b3697267f37f
+                              name:
+                                type: string
+                                description: Shipping method name
+                                example: FedEx
+                              countryTo:
+                                type: string
+                                maxLength: 2
+                                minLength: 2
+                                description: Dispatch country code
+                                pattern: '^[a-zA-Z]{2}$'
+                                example: pl
+                              deliveryTimeFrom:
+                                type: integer
+                                format: int32
+                                minimum: 1
+                                description: Delivery time from in days
+                                example: 1
+                              deliveryTimeTo:
+                                type: integer
+                                format: int32
+                                minimum: 1
+                                description: Delivery time to
+                                example: 3
+                              pricePerFirstItem:
+                                type: string
+                                description: Price for first item in package
+                                example: '2.00'
+                              pricePerNextItem:
+                                type: string
+                                description: Price for next item in package
+                                example: '4.24'
+                              itemsAllowedInPackage:
+                                type: integer
+                                format: int32
+                                minimum: 1
+                                description: Number of items in the package
+                                example: 4
+                            required:
+                              - id
+                              - name
+                              - countryTo
+                              - deliveryTimeFrom
+                              - deliveryTimeTo
+                              - pricePerFirstItem
+                              - pricePerNextItem
+                              - itemsAllowedInPackage
+                required:
+                  - data
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: Unauthorized
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: integer
+                    description: Http status code
+                  code:
+                    type: string
+                    description: Internal error code
+                  message:
+                    type: string
+                    description: Error message in human form
+                required:
+                  - status
+                  - code
+                  - message
+  /oauth/token:
+    post:
+      tags:
+        - Auth
+      summary: Get token
+      operationId: getToken
+      servers:
+        - url: 'https://sandboxapi.g2a.com/'
+      description: 'Get API token to make requests. Error codes has been described here https://tools.ietf.org/html/rfc6749#section-5.2'
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                grant_type:
+                  type: string
+                  example: client_credentials
+                  description: Grant type
+                  enum:
+                    - client_credentials
+                client_id:
+                  type: string
+                  example: DUoLLTRkjPonKNmu
+                  description: Client identifier
+                client_secret:
+                  type: string
+                  example: yIHkLYOiLDuutZstpKNaVQxqQJNNFmGN
+                  description: Client secret
+              required:
+                - grant_type
+                - client_id
+                - client_secret
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: GetOauthToken200
+                type: object
+                additionalProperties: false
+                properties:
+                  access_token:
+                    type: string
+                    description: Access token
+                  token_type:
+                    type: string
+                    description: Token type
+                  expires_in:
+                    type: integer
+                    description: Token expiration time in seconds
+                required:
+                  - access_token
+                  - token_type
+                  - expires_in
+              example:
+                access_token: RVDQPTMVNN-DI4EMLE9VOG
+                token_type: bearer
+                expires_in: 3600
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                title: GetOauthToken400
+                type: object
+                additionalProperties: false
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+              example:
+                error: invalid_request
+                error_description: 'The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: GetOauthToken401
+                type: object
+                additionalProperties: false
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+              example:
+                error: invalid_client
+                error_description: Client authentication failed
+        '403':
+          description: Access Denied
+          content:
+            application/json:
+              schema:
+                title: GetOauthToken403
+                type: object
+                additionalProperties: false
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+              example:
+                error: access_denied
+                error_description: The resource owner or authorization server denied the request
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                title: GetOauthToken500
+                type: object
+                additionalProperties: false
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+              example:
+                error: server_error
+                error_description: The authorization server encountered an unexpected condition that prevented it from fulfilling the request
+        '503':
+          description: Temporarily unavailable
+          content:
+            application/json:
+              schema:
+                title: GetOauthToken503
+                type: object
+                additionalProperties: false
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+              example:
+                error: temporarily_unavailable
+                error_description: The authorization server is currently unable to handle the request due to a temporary overloading or maintenance of the server
+components:
+  securitySchemes:
+    oAuth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: /oauth/token
+          scopes: {}
+security:
+  - oAuth2: []

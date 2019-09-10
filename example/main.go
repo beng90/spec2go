@@ -7,21 +7,8 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 	"net/http"
 	"reflect"
-	"regexp"
 	"strings"
 )
-
-// registerCustomValidations set custom validators
-func registerCustomValidations(validator *validator.Validate) {
-	_ = validator.RegisterValidation("ISO8601", IsISO8601Date)
-}
-
-func IsISO8601Date(fl validator.FieldLevel) bool {
-	ISO8601DateRegexString := "^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])(?:T|\\s)(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])?(Z)?$"
-	ISO8601DateRegex := regexp.MustCompile(ISO8601DateRegexString)
-
-	return ISO8601DateRegex.MatchString(fl.Field().String())
-}
 
 func NewValidator() *validator.Validate {
 	v := validator.New()
@@ -35,16 +22,50 @@ func NewValidator() *validator.Validate {
 	})
 
 	// custom validations
-	registerCustomValidations(v)
-
 	return v
 }
 
 func main() {
-	requestBody := `{"categoryId": 123, "variants": [
+	requestBody := `{
+		"categoryId": "123",
+		"brand": "123",
+		"productName": "test",
+		"additionalInfo": [
+			{
+				"id": 1,
+				"valuesIds": [
+					222,
+					"333"
+				]
+			},
+			{
+				"id": 2,
+				"valuesIds": [
+					"66",
+					99
+				]
+			}
+		],
+		"variants": [
 		{
+			"isEnabled": true,
 			"content": {
-				"description": "asd"
+				"description": "asd",
+				"language": "pl"
+			},
+			"price": "123",
+			"inventory": {
+				"size": 123
+			}
+		},
+		{
+			"isEnabled": true,
+			"content": {
+				"language": "asd"
+			},
+			"price": "123",
+			"inventory": {
+				"size": 123
 			}
 		}
 	]}`
@@ -53,13 +74,9 @@ func main() {
 
 	v := NewValidator()
 
-	errs := validators.AddOfferRequestValidate(v, req)
+	errs := validators.AddOfferValidate(v, req)
 	//fmt.Printf("errs %#v\n", errs)
 	for _, e := range errs {
 		fmt.Println(e)
 	}
-
-	//params := url.Values{}
-	//params.Add("")
-	//req.URL.RawQuery = params.Encode()
 }

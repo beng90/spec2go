@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type SchemaType string
 type SchemaFormat string
@@ -30,9 +33,10 @@ const (
 )
 
 var SchemaTypeToRule = map[SchemaType]RuleType{
+	TypeString:  "string",
 	TypeNumber:  "numeric",
 	TypeInteger: "numeric",
-	TypeBoolean: "oneof:true false",
+	TypeBoolean: "boolean",
 }
 
 var SchemaFormatToRule = map[SchemaFormat]RuleFormat{
@@ -59,7 +63,13 @@ type Parameter struct {
 	IsObject    bool
 }
 
-func (p *Parameter) Rules() (rules []string) {
+type Rules []string
+
+func (r Rules) String() string {
+	return strings.Join(r, ",")
+}
+
+func (p *Parameter) Rules() (rules Rules) {
 	if p.Required {
 		rules = append(rules, "required")
 	}
