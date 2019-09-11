@@ -14,6 +14,6 @@ func {{ .Name }}(v *validator.Validate, req *http.Request) ValidationErrors {
     schemaValidator.validate("{{ $parameter.Name }}", "{{ .Rules }}")
     {{- end }}{{ end }}
 
-	return schemaValidator.errors
+	return schemaValidator.Errors()
 }
 {{ end }}{{ end }}

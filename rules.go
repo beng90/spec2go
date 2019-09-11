@@ -35,7 +35,7 @@ const (
 var SchemaTypeToRule = map[SchemaType]RuleType{
 	TypeString:  "string",
 	TypeNumber:  "numeric",
-	TypeInteger: "numeric",
+	TypeInteger: "integer",
 	TypeBoolean: "boolean",
 }
 
@@ -72,6 +72,8 @@ func (r Rules) String() string {
 func (p *Parameter) Rules() (rules Rules) {
 	if p.Required {
 		rules = append(rules, "required")
+	} else {
+		rules = append(rules, "omitempty")
 	}
 
 	if _, hasType := SchemaTypeToRule[SchemaType(p.Type)]; hasType != false {

@@ -35,11 +35,11 @@ func main() {
 				"id": 1,
 				"valuesIds": [
 					222,
-					"333"
+					333
 				]
 			},
 			{
-				"id": 2,
+				"id": "2",
 				"valuesIds": [
 					"66",
 					99
@@ -47,28 +47,41 @@ func main() {
 			}
 		],
 		"variants": [
-		{
-			"isEnabled": true,
-			"content": {
-				"description": "asd",
-				"language": "pl"
-			},
-			"price": "123",
-			"inventory": {
-				"size": 123
+			{
+				"delivery": {
+					"dispatchTime": 3,
+					"shippingTemplateId": "{{shippingId}}"
+				},
+				"isEnabled": true,
+				"content": {
+					"description": "asd",
+					"language": "pl"
+				},
+				"price": "123",
+				"inventory": {
+					"size": 123
+				},
+				"media": {
+					"images": [
+						{
+							"type": "image",
+							"url": "https://psy-pies.com/pliki/image/foto/duze/foto54eefb49dad42.jpg",
+							"sortOrder": 1
+						},
+						{
+							"sortOrder": 2,
+							"url": "https://skuteczna-samoobrona.pl/wp-content/uploads/rottweiler.jpg"
+						}	
+					]
+				},
+				"tags": [
+					{
+						"id": "1"
+					}
+				]
 			}
-		},
-		{
-			"isEnabled": true,
-			"content": {
-				"language": "asd"
-			},
-			"price": "123",
-			"inventory": {
-				"size": 123
-			}
-		}
-	]}`
+		]
+	}`
 
 	req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBuffer([]byte(requestBody)))
 
