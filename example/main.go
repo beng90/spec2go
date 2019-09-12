@@ -3,7 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/beng90/spec2go/validators"
+	"github.com/beng90/spec2go/example/validators"
+	"github.com/beng90/spec2go/validate"
 	"gopkg.in/go-playground/validator.v9"
 	"net/http"
 	"reflect"
@@ -87,6 +88,8 @@ func main() {
 
 	v := NewValidator()
 
+	// flag to turn on debug mode
+	validate.IsDebugMode = false
 	errs := validators.AddOfferValidate(v, req)
 	//fmt.Printf("errs %#v\n", errs)
 	for _, e := range errs {

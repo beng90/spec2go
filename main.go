@@ -43,7 +43,7 @@ func main() {
 
 	t := template.Must(template.New("validators.tpl").ParseFiles(templateFiles...))
 
-	f, err := os.Create("validators/generated.go")
+	f, err := os.Create("example/validators/generated.go")
 	if err != nil {
 		log.Println("create file: ", err)
 		return
