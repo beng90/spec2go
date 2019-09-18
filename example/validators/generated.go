@@ -6,8 +6,12 @@ import (
 	"net/http"
 )
 
-func AddOfferValidate(v *validator.Validate, req *http.Request) validate.ValidationErrors {
-	schemaValidator := validate.NewSchemaValidator(v, req)
+func AddOfferValidate(v *validator.Validate, req *http.Request) error {
+	schemaValidator, err := validate.NewSchemaValidator(v, req)
+	if err != nil {
+		return err
+	}
+
 	schemaValidator.Validate("additionalInfo", "omitempty")
 	schemaValidator.Validate("additionalInfo[].id", "omitempty,string")
 	schemaValidator.Validate("additionalInfo[].valuesIds", "omitempty")

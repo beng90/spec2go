@@ -3,6 +3,7 @@ package validate
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gopkg.in/go-playground/validator.v9"
 	"io/ioutil"
@@ -10,6 +11,10 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+)
+
+var (
+	ErrInvalidJSON = errors.New("invalid json")
 )
 
 func registerCustomValidations(validator *validator.Validate) {
@@ -183,6 +188,10 @@ func getRequestBody(req *http.Request) (requestBody jsonMap, err error) {
 	// restore body in request
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(buffer))
 
+	if json.Valid(buffer) == false {
+		return nil, ErrInvalidJSON
+	}
+
 	if err := json.Unmarshal(buffer, &requestBody); err != nil {
 		panic(err)
 	}
@@ -196,17 +205,19 @@ type SchemaValidator struct {
 	errors      ValidationErrors
 }
 
-func NewSchemaValidator(v *validator.Validate, req *http.Request) *SchemaValidator {
+func NewSchemaValidator(v *validator.Validate, req *http.Request) (schemaValidator *SchemaValidator, err error) {
 	// custom validations
 	registerCustomValidations(v)
 
 	requestBody, err := getRequestBody(req)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	errs := make(ValidationErrors)
 
-	return &SchemaValidator{v, requestBody, errs}
+	schemaValidator = &SchemaValidator{v, requestBody, errs}
+
+	return
 }
 
 func (s *SchemaValidator) Validate(fieldName string, rule string) {
