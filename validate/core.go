@@ -252,7 +252,7 @@ func (s *SchemaValidator) Validate(fieldName string, rule string) {
 	return
 }
 
-func (s *SchemaValidator) Errors() ValidationErrors {
+func (s *SchemaValidator) Errors() error {
 	if len(s.errors) > 0 {
 		return s.errors
 	}
