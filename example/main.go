@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/beng90/spec2go/validators"
+	"github.com/beng90/spec2go/example/validators"
+	"github.com/beng90/spec2go/validate"
 	"gopkg.in/go-playground/validator.v9"
+	"log"
 	"net/http"
 	"reflect"
 	"strings"
@@ -87,9 +89,19 @@ func main() {
 
 	v := NewValidator()
 
+	// flag to turn on debug mode
+	validate.IsDebugMode = false
 	errs := validators.AddOfferValidate(v, req)
-	//fmt.Printf("errs %#v\n", errs)
-	for _, e := range errs {
-		fmt.Println(e)
+
+	switch vErr := errs.(type) {
+	case validate.ValidationErrors:
+		for _, e := range errs.(validate.ValidationErrors) {
+			fmt.Println(e)
+		}
+	default:
+		if vErr == validate.ErrInvalidJSON {
+			log.Println(vErr)
+		}
 	}
+	//fmt.Printf("errs %#v\n", errs)
 }

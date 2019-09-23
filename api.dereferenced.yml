@@ -102,17 +102,8 @@ paths:
                             maximum: 4294967295
                             description: Number of items to sell
                             example: 999
-                          sold:
-                            type: integer
-                            format: int32
-                            minimum: 1
-                            maximum: 4294967295
-                            description: Number of sold items
-                            example: 15
-                            readOnly: true
                         required:
                           - size
-                          - sold
                       content:
                         type: array
                         description: Array of content in different languages. "en" is required
