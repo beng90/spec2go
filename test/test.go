@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type FieldSchema struct {
@@ -157,10 +158,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%#v\n", req["features"].Items[0]["key1"].Value)
-	fmt.Printf("%#v\n", req["features"].Items[0].Get("key2").Value)
-	fmt.Printf("%#v\n", req["variants"].Items[0]["tags"].Items.Get(0).Value)
-	fmt.Printf("%#v\n", req["variants"].Items[0]["tags"].Items.Get(1).Value)
+	//fmt.Printf("%#v\n", req["features"].Items[0]["key1"].Value)
+	//fmt.Printf("%#v\n", req["features"].Items[0].Get("key2").Value)
+	//fmt.Printf("%#v\n", req["variants"].Items[0]["tags"].Items.Get(0).Value)
+	//fmt.Printf("%#v\n", req["variants"].Items[0]["tags"].Items.Get(1).Value)
 	//fmt.Printf("%#v\n", req["variants"].Items[0]["tags"].Items.Get(2))
 	//fmt.Printf("%#v\n", req["variants"].Items[0]["tags"].Items[1].Value)
 	//fmt.Printf("%#v\n", req["variants"].Items[0]["tags"].Items[0].Get("asd"))
@@ -188,8 +189,8 @@ func walk(req MapField, rules MapField, path []string) {
 			}
 		}
 
-		//fmt.Println("fieldName:", strings.Join(path, "."), "rule:", field.Rules)
-		//fmt.Println("value", req["categoryId"].Value.([]uint8))
+		fmt.Println("fieldName:", strings.Join(path, "."), "rule:", field.Rules)
+		fmt.Println("value", req.Get(strings.Join(path, ".")))
 		path = path[:len(path)-1]
 	}
 }

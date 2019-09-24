@@ -41,18 +41,14 @@ func main() {
 				]
 			},
 			{
-				"id": "2",
-				"valuesIds": [
-					"66",
-					99
-				]
+				"id": "2"
 			}
 		],
 		"variants": [
 			{
 				"delivery": {
 					"dispatchTime": 3,
-					"shippingTemplateId": "{{shippingId}}"
+					"shippingTemplateId": "5839c1a6-293f-43bf-ba8b-8a3cb19f4ea5"
 				},
 				"isEnabled": true,
 				"content": {

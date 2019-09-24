@@ -202,7 +202,12 @@ func getRequestBody(req *http.Request) (requestBody jsonMap, err error) {
 type SchemaValidator struct {
 	validator   *validator.Validate
 	requestBody jsonMap
-	errors      ValidationErrors
+	rules       []Rule
+}
+
+type Rule struct {
+	Path  string
+	Rules string
 }
 
 func NewSchemaValidator(v *validator.Validate, req *http.Request) (schemaValidator *SchemaValidator, err error) {
@@ -213,49 +218,48 @@ func NewSchemaValidator(v *validator.Validate, req *http.Request) (schemaValidat
 	if err != nil {
 		return nil, err
 	}
-	errs := make(ValidationErrors)
 
-	schemaValidator = &SchemaValidator{v, requestBody, errs}
+	schemaValidator = &SchemaValidator{v, requestBody, nil}
 
 	return
 }
 
-func (s *SchemaValidator) Validate(fieldName string, rule string) {
-	value := s.requestBody.Get(fieldName)
+func (s *SchemaValidator) AddRule(path string, rule string) {
+	s.rules = append(s.rules, Rule{path, rule})
+}
 
-	switch v := value.(type) {
-	case []jsonField:
-		if len(v) > 0 {
-			for _, vv := range v {
-				debug("val", vv.value, "rule", rule)
-				switch vvv := vv.value.(type) {
-				case []interface{}:
-					for _, singleValue := range vvv {
-						err := s.validator.Var(singleValue, rule)
-						try(s.errors, fieldName, err)
+func (s *SchemaValidator) Validate() error {
+	errors := make(ValidationErrors)
+
+	for _, rule := range s.rules {
+		value := s.requestBody.Get(rule.Path)
+
+		switch v := value.(type) {
+		case []jsonField:
+			if len(v) > 0 {
+				for _, vv := range v {
+					debug("val", vv.value, "rule", rule.Rules)
+					switch vvv := vv.value.(type) {
+					case []interface{}:
+						for _, singleValue := range vvv {
+							err := s.validator.Var(singleValue, rule.Rules)
+							try(errors, rule.Path, err)
+						}
+					default:
+						err := s.validator.Var(vv.value, rule.Rules)
+						try(errors, rule.Path, err)
 					}
-				default:
-					err := s.validator.Var(vv.value, rule)
-					try(s.errors, fieldName, err)
 				}
+			} else {
+				err := s.validator.Var(v, rule.Rules)
+				try(errors, rule.Path, err)
 			}
-		} else {
-			err := s.validator.Var(v, rule)
-			try(s.errors, fieldName, err)
+		default:
+			fmt.Printf("Default: %T\n", v)
+			err := s.validator.Var(v, rule.Rules)
+			try(errors, rule.Path, err)
 		}
-	default:
-		fmt.Printf("Default: %T\n", v)
-		err := s.validator.Var(v, rule)
-		try(s.errors, fieldName, err)
 	}
 
-	return
-}
-
-func (s *SchemaValidator) Errors() error {
-	if len(s.errors) > 0 {
-		return s.errors
-	}
-
-	return nil
+	return errors
 }
