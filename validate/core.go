@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -96,89 +97,44 @@ func try(errs ValidationErrors, fieldName string, err error) {
 	}
 }
 
-type jsonMap map[string]interface{}
-
 type jsonField struct {
 	name  string
 	value interface{}
 }
 
-func (j jsonMap) getVal(exploded []string, i int, prev interface{}, data *[]jsonField) {
-	if len(exploded) <= i {
-		return
-	}
-
-	fn := strings.Trim(exploded[i], "[]")
-	//fmt.Println("fn", fn)
-	//fmt.Println("prev", prev)
-
-	switch v := prev.(type) {
-	case string, float64, int, bool, nil:
-		*data = append(*data, jsonField{
-			name:  fn,
-			value: v,
-		})
-	case jsonMap:
-		debug("--- jsonMap ---")
-
-		// take next index from map and go through
-		//fmt.Println("exploded", fn, v[fn])
-		if i+1 < len(exploded) {
-			j.getVal(exploded, i+1, v[fn], data)
-		} else {
-			j.getVal(exploded, i, v[fn], data)
-		}
-	case map[string]interface{}:
-		debug("--- map[string]interface{} ---")
-		//debug("v", fn, v[fn])
-		//debug("exploded", exploded[i], v)
-
-		// for 1 level
-		if len(exploded) == 1 {
-			*data = append(*data, jsonField{
-				name:  fn,
-				value: v,
-			})
-		} else {
-
-			if i+1 < len(exploded) {
-				j.getVal(exploded, i+1, v[fn], data)
-			} else {
-				//j.getVal(exploded, i, v[fn], data)
-				//is last element from exploded
-				debug("v", fn, v[fn])
-				*data = append(*data, jsonField{
-					name:  fn,
-					value: v[fn],
-				})
-			}
-		}
-	case []interface{}:
-		debug("--- []interface{} ---")
-
-		for _, vv := range v {
-			//fmt.Println("exploded[i]", i, exploded[i], vv)
-			j.getVal(exploded, i, vv, data)
-		}
-	default:
-		fmt.Printf("Default: %T\n", v)
-	}
-}
-
-func (j jsonMap) Get(fieldName string) interface{} {
+func (j MapField) GetVal(fieldName string) interface{} {
 	exploded := strings.Split(fieldName, ".")
 	if len(exploded) > 0 {
 		var val []jsonField
-		j.getVal(exploded, 0, j, &val)
+		var prev interface{}
+		for _, part := range exploded {
+			fn := strings.Trim(part, "[]")
+			fmt.Println("part", fn, prev)
+			var current interface{} = j[fn]
 
-		debug("val", val)
+			if current != nil {
+				switch v := current.(type) {
+				case FieldSchema:
+					if v.Items != nil {
+						for _, vv := range v.Items {
+							fmt.Println("vv", vv)
+						}
+					}
+				default:
+					fmt.Printf("%T", v)
+				}
+			}
+
+			prev = current
+		}
+
 		return val
 	}
 
 	return nil
 }
 
-func getRequestBody(req *http.Request) (requestBody jsonMap, err error) {
+func getRequestBody(req *http.Request) (requestBody MapField, err error) {
 	// Read body
 	buffer, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -201,13 +157,23 @@ func getRequestBody(req *http.Request) (requestBody jsonMap, err error) {
 
 type SchemaValidator struct {
 	validator   *validator.Validate
-	requestBody jsonMap
-	rules       []Rule
+	requestBody MapField
+	rules       RulesMap
+	valuesMap   ValuesMap
+	errors      ValidationErrors
 }
 
+type ValuesMap map[string]interface{}
+
+func (v ValuesMap) Add(path string, value interface{}) {
+	v[path] = value
+}
+
+type RulesMap map[string]Rule
 type Rule struct {
-	Path  string
-	Rules string
+	Path   string
+	Rules  []string
+	Passed bool
 }
 
 func NewSchemaValidator(v *validator.Validate, req *http.Request) (schemaValidator *SchemaValidator, err error) {
@@ -219,47 +185,148 @@ func NewSchemaValidator(v *validator.Validate, req *http.Request) (schemaValidat
 		return nil, err
 	}
 
-	schemaValidator = &SchemaValidator{v, requestBody, nil}
+	schemaValidator = &SchemaValidator{
+		v,
+		requestBody,
+		make(RulesMap),
+		make(ValuesMap),
+		make(ValidationErrors),
+	}
 
 	return
 }
 
 func (s *SchemaValidator) AddRule(path string, rule string) {
-	s.rules = append(s.rules, Rule{path, rule})
+	if s.rules == nil {
+		s.rules = make(RulesMap)
+	}
+
+	rulesSlice := strings.Split(rule, ",")
+	s.rules[path] = Rule{path, rulesSlice, false}
+}
+
+func (s *SchemaValidator) hasRule(path []string) bool {
+	if _, ok := s.rules[s.fieldPath(path)]; ok {
+		return true
+	}
+
+	return false
+}
+
+func (s *SchemaValidator) getRule(path []string) *Rule {
+	if rule, ok := s.rules[s.ruleName(path)]; ok {
+		return &rule
+	}
+
+	return nil
+}
+
+func (s *SchemaValidator) fieldPath(path []string) string {
+	return strings.Join(path, ".")
+}
+
+func (s *SchemaValidator) ruleName(path []string) string {
+	var re = regexp.MustCompile(`(?m)\[(\d)\]`)
+	ruleName := re.ReplaceAllString(strings.Join(path, "."), `[]`)
+
+	return ruleName
+}
+
+func (s *SchemaValidator) walk(data MapField, path []string) {
+	for fieldName, field := range data {
+		if field.Properties != nil {
+			path = append(path, fieldName)
+			//rule := s.getRule(path)
+			//if rule != nil && len(rule.Rules) > 0 {
+			//	field.Rules = rule.Rules
+			//	fmt.Println("ruleName", s.ruleName(path), len(rule.Rules))
+			//}
+
+			s.walk(field.Properties, path)
+			path = path[:len(path)-1]
+		} else if field.Items != nil {
+			rule := s.getRule(append(path, fieldName+"[]"))
+			//fmt.Println("fieldName", fieldName, path)
+			if rule != nil {
+				field.Rules = rule.Rules
+				//fmt.Println("ruleName", s.ruleName(path), rule)
+				//fmt.Printf("%#v\n", field.Value)
+			}
+
+			for i, item := range field.Items {
+				path = append(path, fieldName+"["+strconv.Itoa(i)+"]")
+				s.walk(item, path)
+
+				path = path[:len(path)-1]
+			}
+		} else {
+			// TODO: change hardcode
+			if fieldName != "value" {
+				path = append(path, fieldName)
+			}
+
+			s.valuesMap.Add(s.fieldPath(path), field.Value)
+			//fmt.Println("ruleName", s.ruleName(path))
+			// add rules to struct
+			rule := s.getRule(path)
+			if rule != nil {
+				field.Rules = rule.Rules
+			}
+
+			path = path[:len(path)-1]
+		}
+	}
 }
 
 func (s *SchemaValidator) Validate() error {
-	errors := make(ValidationErrors)
+	errs := make(ValidationErrors)
 
-	for _, rule := range s.rules {
-		value := s.requestBody.Get(rule.Path)
+	s.walk(s.requestBody, []string{})
+	//s.requestBody["additionalInfo"].Rules = []string{"zzz", "yyy"}
+	fmt.Printf("additionalInfo %#v\n", s.requestBody["additionalInfo"].Rules)
+	fmt.Printf("brand %#v\n", s.requestBody["brand"].Rules)
+	//fmt.Printf("s.requestBody:\n %#v\n", s.requestBody["additionalInfo"].Items[0]["id"].Rules)
 
-		switch v := value.(type) {
-		case []jsonField:
-			if len(v) > 0 {
-				for _, vv := range v {
-					debug("val", vv.value, "rule", rule.Rules)
-					switch vvv := vv.value.(type) {
-					case []interface{}:
-						for _, singleValue := range vvv {
-							err := s.validator.Var(singleValue, rule.Rules)
-							try(errors, rule.Path, err)
-						}
-					default:
-						err := s.validator.Var(vv.value, rule.Rules)
-						try(errors, rule.Path, err)
-					}
-				}
-			} else {
-				err := s.validator.Var(v, rule.Rules)
-				try(errors, rule.Path, err)
-			}
-		default:
-			fmt.Printf("Default: %T\n", v)
-			err := s.validator.Var(v, rule.Rules)
-			try(errors, rule.Path, err)
-		}
-	}
+	//for fieldName, rule := range s.rules {
+	//	//fmt.Println("field", fieldName, s.valuesMap["additionalInfo[0].id"])
+	//	if value, ok := s.valuesMap[fieldName]; ok {
+	//		err := s.validator.Var(value, rule.Rules)
+	//		try(errs, rule.Path, err)
+	//	} else {
+	//		err := s.validator.Var(nil, rule.Rules)
+	//		try(errs, rule.Path, err)
+	//	}
+	//}
 
-	return errors
+	//for _, rule := range s.rules {
+	//	value := s.requestBody.GetVal(rule.Path)
+	//
+	//	switch v := value.(type) {
+	//	case []jsonField:
+	//		if len(v) > 0 {
+	//			for _, vv := range v {
+	//				debug("val", vv.value, "rule", rule.Rules)
+	//				switch vvv := vv.value.(type) {
+	//				case []interface{}:
+	//					for _, singleValue := range vvv {
+	//						err := s.validator.Var(singleValue, rule.Rules)
+	//						try(errors, rule.Path, err)
+	//					}
+	//				default:
+	//					err := s.validator.Var(vv.value, rule.Rules)
+	//					try(errors, rule.Path, err)
+	//				}
+	//			}
+	//		} else {
+	//			err := s.validator.Var(v, rule.Rules)
+	//			try(errors, rule.Path, err)
+	//		}
+	//	default:
+	//		fmt.Printf("Default: %T\n", v)
+	//		err := s.validator.Var(v, rule.Rules)
+	//		try(errors, rule.Path, err)
+	//	}
+	//}
+
+	return errs
 }
