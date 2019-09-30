@@ -140,13 +140,12 @@ func (j jsonMap) getVal(exploded []string, i int, prev interface{}, data *[]json
 				value: v,
 			})
 		} else {
-
 			if i+1 < len(exploded) {
 				j.getVal(exploded, i+1, v[fn], data)
 			} else {
 				//j.getVal(exploded, i, v[fn], data)
 				//is last element from exploded
-				debug("v", fn, v[fn])
+				//debug("v", fn, v[fn])
 				*data = append(*data, jsonField{
 					name:  fn,
 					value: v[fn],
@@ -202,12 +201,45 @@ func getRequestBody(req *http.Request) (requestBody jsonMap, err error) {
 type SchemaValidator struct {
 	validator   *validator.Validate
 	requestBody jsonMap
-	rules       []Rule
+	rules       RulesMap
 }
 
+type RulesMap map[string]Rule
+
 type Rule struct {
-	Path  string
+	path  string
 	Rules string
+}
+
+func (r Rule) HasParentValue(requestBody jsonMap) bool {
+	value := requestBody.Get(r.path)
+
+	switch v := value.(type) {
+	case []jsonField:
+		if len(v) > 0 {
+			for _, vv := range v {
+				fmt.Println("vv", vv)
+				if vv.value == nil {
+					return false
+				}
+			}
+
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r Rule) IsRequired() bool {
+	if strings.Contains(r.Rules, "required") {
+		return true
+	}
+
+	return false
+}
+func (r Rule) Path() []string {
+	return strings.Split(r.path, ".")
 }
 
 func NewSchemaValidator(v *validator.Validate, req *http.Request) (schemaValidator *SchemaValidator, err error) {
@@ -219,45 +251,64 @@ func NewSchemaValidator(v *validator.Validate, req *http.Request) (schemaValidat
 		return nil, err
 	}
 
-	schemaValidator = &SchemaValidator{v, requestBody, nil}
+	schemaValidator = &SchemaValidator{v, requestBody, make(RulesMap)}
 
 	return
 }
 
 func (s *SchemaValidator) AddRule(path string, rule string) {
-	s.rules = append(s.rules, Rule{path, rule})
+	s.rules[path] = Rule{path, rule}
+}
+
+func (s *SchemaValidator) getParentRule(rule Rule) Rule {
+	parentRulePath := strings.Join(rule.Path()[:len(rule.Path())-1], ".")
+
+	return s.rules[parentRulePath]
 }
 
 func (s *SchemaValidator) Validate() error {
 	errors := make(ValidationErrors)
 
 	for _, rule := range s.rules {
-		value := s.requestBody.Get(rule.Path)
+		value := s.requestBody.Get(rule.path)
+		//fmt.Println("rule.Path", rule.path, value)
 
 		switch v := value.(type) {
 		case []jsonField:
 			if len(v) > 0 {
 				for _, vv := range v {
-					debug("val", vv.value, "rule", rule.Rules)
+					if vv.value == nil && len(rule.Path()) > 1 {
+						//fmt.Println("rule.path", rule.Path())
+						parentRule := s.getParentRule(rule)
+						//fmt.Println("parentRuleValue", parentRuleValue)
+						if !parentRule.IsRequired() || !rule.HasParentValue(s.requestBody) {
+							continue
+						}
+					}
+
+					//debug("val", vv.value, "rule", rule.Rules)
 					switch vvv := vv.value.(type) {
 					case []interface{}:
 						for _, singleValue := range vvv {
 							err := s.validator.Var(singleValue, rule.Rules)
-							try(errors, rule.Path, err)
+							try(errors, rule.path, err)
 						}
 					default:
 						err := s.validator.Var(vv.value, rule.Rules)
-						try(errors, rule.Path, err)
+						try(errors, rule.path, err)
 					}
 				}
 			} else {
-				err := s.validator.Var(v, rule.Rules)
-				try(errors, rule.Path, err)
+				parentRule := s.getParentRule(rule)
+				if parentRule.IsRequired() {
+					err := s.validator.Var(v, rule.Rules)
+					try(errors, rule.path, err)
+				}
 			}
 		default:
 			fmt.Printf("Default: %T\n", v)
 			err := s.validator.Var(v, rule.Rules)
-			try(errors, rule.Path, err)
+			try(errors, rule.path, err)
 		}
 	}
 

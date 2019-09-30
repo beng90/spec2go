@@ -29,25 +29,11 @@ func NewValidator() *validator.Validate {
 
 func main() {
 	requestBody := `{
-		"categoryId": "123",
 		"brand": "123",
 		"productName": "test",
-		"additionalInfo": [
-			{
-				"id": 1,
-				"valuesIds": [
-					222,
-					333
-				]
-			},
-			{
-				"id": "2"
-			}
-		],
 		"variants": [
 			{
 				"delivery": {
-					"dispatchTime": 3,
 					"shippingTemplateId": "5839c1a6-293f-43bf-ba8b-8a3cb19f4ea5"
 				},
 				"isEnabled": true,

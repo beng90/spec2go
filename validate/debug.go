@@ -8,6 +8,6 @@ var IsDebugMode = false
 
 func debug(v ...interface{}) {
 	if IsDebugMode == true {
-		log.Println(v)
+		log.Println(v...)
 	}
 }
