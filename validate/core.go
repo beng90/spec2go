@@ -3,66 +3,14 @@ package validate
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"gopkg.in/go-playground/validator.v9"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 )
-
-var (
-	ErrInvalidJSON = errors.New("invalid json")
-)
-
-func registerCustomValidations(validator *validator.Validate) {
-	_ = validator.RegisterValidation("ISO8601", IsISO8601Date)
-	_ = validator.RegisterValidation("boolean", IsBoolean)
-	_ = validator.RegisterValidation("string", IsString)
-	_ = validator.RegisterValidation("integer", IsNumber)
-}
-
-func IsISO8601Date(fl validator.FieldLevel) bool {
-	ISO8601DateRegexString := "^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])(?:T|\\s)(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])?(Z)?$"
-	ISO8601DateRegex := regexp.MustCompile(ISO8601DateRegexString)
-
-	return ISO8601DateRegex.MatchString(fl.Field().String())
-}
-
-func IsBoolean(fl validator.FieldLevel) bool {
-	if fl.Field().Kind() == reflect.Bool {
-		return true
-	}
-
-	return false
-}
-
-func IsString(fl validator.FieldLevel) bool {
-	if fl.Field().Kind() == reflect.String {
-		return true
-	}
-
-	return false
-}
-
-func IsNumber(fl validator.FieldLevel) bool {
-	switch fl.Field().Kind() {
-	case reflect.Float32, reflect.Float64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return true
-	}
-
-	return false
-}
-
-type ValidationErrors map[string][]FieldError
-
-func (v ValidationErrors) Error() string {
-	return ""
-}
 
 type FieldError struct {
 	Field            string
@@ -232,59 +180,126 @@ func (s *SchemaValidator) ruleName(path []string) string {
 	return ruleName
 }
 
-func (s *SchemaValidator) walk(data MapField, path []string) {
+type TreeField struct {
+	Field string
+	Value interface{}
+	Rule  Rules
+}
+
+func (s *SchemaValidator) walk(data MapField, path []string, tree []TreeField) {
 	for fieldName, field := range data {
+		//fmt.Println("fieldName", fieldName)
 		if field.Properties != nil {
 			path = append(path, fieldName)
-			//rule := s.getRule(path)
-			//if rule != nil && len(rule.Rules) > 0 {
-			//	field.Rules = rule.Rules
-			//	fmt.Println("ruleName", s.ruleName(path), len(rule.Rules))
-			//}
+			rule := s.getRule(path)
+			treeRule := []string{}
+			if rule != nil {
+				treeRule = rule.Rules
+			}
 
-			s.walk(field.Properties, path)
+			tree = append(tree, TreeField{
+				Field: fieldName,
+				Value: data,
+				Rule:  treeRule,
+			})
+
+			s.walk(field.Properties, path, tree)
 			path = path[:len(path)-1]
+			tree = tree[:len(tree)-1]
 		} else if field.Items != nil {
 			rule := s.getRule(append(path, fieldName+"[]"))
-			//fmt.Println("fieldName", fieldName, path)
+
 			if rule != nil {
 				field.Rules = rule.Rules
-				//fmt.Println("ruleName", s.ruleName(path), rule)
+				//fmt.Println("ruleName", s.ruleName(path), rule, prev)
 				//fmt.Printf("%#v\n", field.Value)
 			}
 
+			//fmt.Println("fieldName", fieldName, field.Value)
+			tree = append(tree, TreeField{
+				Field: fieldName,
+				Value: field.Value,
+				Rule:  field.Rules,
+			})
+
 			for i, item := range field.Items {
+				treeRule := []string{}
+				if rule != nil {
+					treeRule = rule.Rules
+				}
+
+				tree = append(tree, TreeField{
+					Field: fieldName + "[" + strconv.Itoa(i) + "]",
+					Value: item.Get("value"),
+					Rule:  treeRule,
+				})
+
 				path = append(path, fieldName+"["+strconv.Itoa(i)+"]")
-				s.walk(item, path)
+				s.walk(item, path, tree)
 
 				path = path[:len(path)-1]
+				tree = tree[:len(tree)-1]
 			}
 		} else {
-			// TODO: change hardcode
-			if fieldName != "value" {
-				path = append(path, fieldName)
-			}
-
-			s.valuesMap.Add(s.fieldPath(path), field.Value)
-			//fmt.Println("ruleName", s.ruleName(path))
-			// add rules to struct
-			rule := s.getRule(path)
-			if rule != nil {
-				field.Rules = rule.Rules
-			}
-
-			path = path[:len(path)-1]
+			field.Name = fieldName
+			s.processField(field, tree, path)
 		}
 	}
 }
 
-func (s *SchemaValidator) Validate() error {
-	errs := make(ValidationErrors)
+func (s *SchemaValidator) processField(field *FieldSchema, tree []TreeField, path []string) {
+	prev := TreeField{}
+	if len(tree) > 0 {
+		if field.Name == "value" {
+			prev = tree[len(tree)-2]
+		} else if len(tree) >= 2 {
+			prev = tree[len(tree)-2]
+		}
 
-	s.walk(s.requestBody, []string{})
+		//fmt.Println("prev", s.fieldPath(path), prev.Value, prev.Rule)
+	}
+
+	// TODO: change hardcode
+	if field.Name != "value" {
+		path = append(path, field.Name)
+	}
+
+	s.valuesMap.Add(s.fieldPath(path), field.Value)
+
+	rule := s.getRule(path)
+	if rule != nil {
+		field.Rules = rule.Rules
+	}
+
+	//fmt.Println("current", s.fieldPath(path), field.Rules)
+
+	if field.IsRequired() && field.Value == nil {
+		if prev.Rule.Required() {
+			vErr := s.validator.Var(field.Value, field.Rules.String())
+			//fmt.Println("vErr", vErr)
+			try(s.errors, field.Name, vErr)
+		}
+	} else {
+		vErr := s.validator.Var(field.Value, field.Rules.String())
+		//fmt.Println("vErr", vErr)
+		try(s.errors, s.fieldPath(path), vErr)
+	}
+
+	tree = append(tree, TreeField{
+		Field: field.Name,
+		Value: field.Value,
+		Rule:  field.Rules,
+	})
+
+	path = path[:len(path)-1]
+	tree = tree[:len(tree)-1]
+}
+
+func (s *SchemaValidator) Validate() error {
+	s.walk(s.requestBody, []string{}, []TreeField{})
 	//s.requestBody["additionalInfo"].Rules = []string{"zzz", "yyy"}
-	fmt.Printf("additionalInfo %#v\n", s.requestBody["additionalInfo"].Rules)
-	fmt.Printf("brand %#v\n", s.requestBody["brand"].Rules)
+	//fmt.Printf("additionalInfo %#v\n", s.requestBody["additionalInfo"].Rules)
+	//fmt.Printf("brand %#v\n", s.requestBody["brand"].Rules)
 	//fmt.Printf("s.requestBody:\n %#v\n", s.requestBody["additionalInfo"].Items[0]["id"].Rules)
 
 	//for fieldName, rule := range s.rules {
@@ -328,5 +343,5 @@ func (s *SchemaValidator) Validate() error {
 	//	}
 	//}
 
-	return errs
+	return s.errors
 }

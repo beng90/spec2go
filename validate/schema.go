@@ -2,13 +2,30 @@ package validate
 
 import (
 	"encoding/json"
+	"strings"
 )
+
+type Rules []string
+
+func (r Rules) String() string {
+	return strings.Join(r, ",")
+}
+
+func (r Rules) Required() bool {
+	for _, rule := range r {
+		if rule == "required" {
+			return true
+		}
+	}
+
+	return false
+}
 
 type FieldSchema struct {
 	Type       string
 	Name       string
 	Value      interface{}
-	Rules      []string
+	Rules      Rules
 	Properties MapField
 	Items      FieldArray
 }
@@ -89,4 +106,14 @@ func (f *FieldSchema) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+func (f *FieldSchema) IsRequired() bool {
+	for _, rule := range f.Rules {
+		if rule == "required" {
+			return true
+		}
+	}
+
+	return false
 }
