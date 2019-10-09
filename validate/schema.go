@@ -27,30 +27,37 @@ type FieldSchema struct {
 	Value      interface{}
 	Rules      Rules
 	Properties MapField
-	Items      FieldArray
+	Items      FieldsArray
 }
 
 type SliceField interface {
 	Get(index string) interface{}
 }
 
-type FieldArray []MapField
-type MapField map[string]*FieldSchema
+type FieldsArray []MapField
 
-func (m MapField) Get(index string) *FieldSchema {
+func (f FieldsArray) last() MapField {
+	return f[len(f)-1]
+}
+
+type MapField map[string]FieldSchema
+
+func (m MapField) Get(index string) FieldSchema {
+	index = strings.Trim(index, "[]")
+
 	if _, ok := m[index]; ok {
 		v := m[index]
 
 		return v
 	}
 
-	return nil
+	return FieldSchema{}
 }
 
-func (m FieldArray) Get(index int) *FieldSchema {
+func (f FieldsArray) Get(index int) *FieldSchema {
 	//fmt.Println("Get", index, len(m))
 
-	if index >= len(m) {
+	if index >= len(f) {
 		return nil
 	}
 
@@ -76,7 +83,7 @@ func (f *FieldSchema) UnmarshalJSON(data []byte) error {
 			switch vv.(type) {
 			case string, float64:
 				f.Items = append(f.Items, MapField{
-					"value": &FieldSchema{
+					"value": FieldSchema{
 						Type:  "item",
 						Name:  "value",
 						Value: vv,

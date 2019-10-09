@@ -75,53 +75,15 @@ func main() {
 			{
 				"id": 1,
 				"valuesIds": [
-					222,
-					333
+					"222",
+					"333",
+					"444"
 				]
 			},
 			{
 				"id": "2"
 			}
-		],
-		"variants": [
-			{
-				"delivery": {
-					"dispatchTime": 3,
-					"shippingTemplateId": "5839c1a6-293f-43bf-ba8b-8a3cb19f4ea5"
-				},
-				"isEnabled": true,
-				"content": {
-					"description": "asd",
-					"language": "pl"
-				},
-				"price": "123",
-				"inventory": {
-					"size": 123
-				},
-				"media": {
-					"images": [
-						{
-							"type": "image",
-							"url": "https://psy-pies.com/pliki/image/foto/duze/foto54eefb49dad42.jpg",
-							"sortOrder": 1
-						},
-						{
-							"sortOrder": 2,
-							"url": "https://skuteczna-samoobrona.pl/wp-content/uploads/rottweiler.jpg"
-						}	
-					]
-				},
-				"tags": [
-					{
-						"id": "1"
-					}
-				]
-			}
-		],
-		"testobject": {
-			"field1": 1,
-			"field2": 2
-		}
+		]
 	}`
 
 	var errs error

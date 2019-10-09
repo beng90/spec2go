@@ -247,7 +247,7 @@ func (s *SchemaValidator) walk(data MapField, path []string, tree []TreeField) {
 	}
 }
 
-func (s *SchemaValidator) processField(field *FieldSchema, tree []TreeField, path []string) {
+func (s *SchemaValidator) processField(field FieldSchema, tree []TreeField, path []string) {
 	prev := TreeField{}
 	if len(tree) > 0 {
 		if field.Name == "value" {
@@ -295,8 +295,100 @@ func (s *SchemaValidator) processField(field *FieldSchema, tree []TreeField, pat
 	tree = tree[:len(tree)-1]
 }
 
+type FieldPath []string
+
+func (path *FieldPath) add(s string) {
+	*path = append(*path, s)
+}
+
+func (path *FieldPath) String() string {
+	return strings.Join(*path, ".")
+}
+
+func (path FieldPath) last() string {
+	return path[len(path)-1]
+}
+
+func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree FieldsArray, values *[]FieldSchema, path FieldPath) {
+	fieldName := exploded[index]
+	lastValue := fieldsTree.last()
+	//fmt.Println("field", fieldName, lastValue)
+
+	if index == len(exploded)-1 {
+		path.add(fieldName)
+		//fmt.Println("value", fieldName, fieldsTree.last().Get(fieldName).Name)
+
+		f := lastValue.Get(fieldName)
+		f.Name = strings.Join(path, ".")
+		f.Rules = s.rules[exploded.String()].Rules
+		//fmt.Println("f", f)
+
+		if strings.Contains(exploded[index], "[]") {
+			//fmt.Println(f.Items)
+			if f.Items != nil && len(f.Items) > 0 {
+				path[len(path)-1] = strings.Trim(path[len(path)-1], "[]")
+				for i, item := range f.Items {
+					//path = append(path, "["+strconv.Itoa(i)+"]")
+					singleItem := item.Get("value")
+					singleItem.Name = strings.Join(path, ".") + "[" + strconv.Itoa(i) + "]"
+					singleItem.Rules = s.rules[exploded.String()].Rules
+					*values = append(*values, singleItem)
+				}
+
+				return
+			}
+
+			f.Value = nil
+			*values = append(*values, f)
+
+			return
+		}
+
+		*values = append(*values, f)
+
+		return
+	}
+
+	//fmt.Println("fieldsTree.last()", fieldsTree.last().Get(fieldName))
+	if fieldsTree.last().Get(fieldName).Properties != nil {
+		path.add(fieldName)
+		fieldsMap := fieldsTree.last().Get(fieldName).Properties
+		fieldsTree = append(fieldsTree, fieldsMap)
+
+		s.getValue(exploded, index+1, fieldsTree, values, path)
+
+		path = path[:len(path)-1]
+	}
+
+	if fieldsTree.last().Get(fieldName).Items != nil {
+		for i, item := range fieldsTree.last().Get(fieldName).Items {
+			path.add(strings.Trim(fieldName, "[]") + "[" + strconv.Itoa(i) + "]")
+			fieldsTree = append(fieldsTree, item)
+
+			s.getValue(exploded, index+1, fieldsTree, values, path)
+
+			fieldsTree = fieldsTree[:len(fieldsTree)-1]
+			path = path[:len(path)-1]
+		}
+	}
+}
+
 func (s *SchemaValidator) Validate() error {
-	s.walk(s.requestBody, []string{}, []TreeField{})
+	data := FieldsArray{s.requestBody}
+	values := &[]FieldSchema{}
+
+	s.getValue(strings.Split("additionalInfo[].valuesIds[]", "."), 0, data, values, []string{})
+	s.getValue(strings.Split("additionalInfo[].id", "."), 0, data, values, []string{})
+
+	//fmt.Println("values", values)
+
+	for _, field := range *values {
+		//fmt.Println("field.Rules", field.Rules, field.Value)
+		err := s.validator.Var(field.Value, field.Rules.String())
+		try(s.errors, field.Name, err)
+	}
+
+	//s.walk(s.requestBody, []string{}, []TreeField{})
 	//s.requestBody["additionalInfo"].Rules = []string{"zzz", "yyy"}
 	//fmt.Printf("additionalInfo %#v\n", s.requestBody["additionalInfo"].Rules)
 	//fmt.Printf("brand %#v\n", s.requestBody["brand"].Rules)

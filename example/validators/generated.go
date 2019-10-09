@@ -14,9 +14,8 @@ func AddOfferValidate(v *validator.Validate, req *http.Request) error {
 
 	schemaValidator.AddRule("additionalInfo[]", "omitempty,min=1")
 	schemaValidator.AddRule("additionalInfo[].id", "required,string")
-	//schemaValidator.AddRule("additionalInfo[].valuesIds", "required")
-	//schemaValidator.AddRule("additionalInfo[].valuesIds[]", "required,min=1,string")
-	schemaValidator.AddRule("brand", "omitempty,string")
+	schemaValidator.AddRule("additionalInfo[].valuesIds[]", "required,min=1,string")
+	//schemaValidator.AddRule("brand", "omitempty,string")
 	//schemaValidator.AddRule("categoryId", "required,string,max=16")
 	//schemaValidator.AddRule("defaultLanguage", "omitempty,string,min=2,max=2")
 	//schemaValidator.AddRule("productName", "required,string,min=1,max=255")
