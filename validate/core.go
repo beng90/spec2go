@@ -313,22 +313,23 @@ func (path FieldPath) last() string {
 func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree FieldsArray, values *[]FieldSchema, path FieldPath) {
 	fieldName := exploded[index]
 	lastValue := fieldsTree.last()
-	//fmt.Println("field", fieldName, lastValue)
+	rules := s.rules[exploded.String()].Rules
+	parent := lastValue.Get(fieldName)
+	parent.Name = path.String()
+	parent.Rules = rules
 
+	//fmt.Println("field", fieldName)
+
+	// last path element
 	if index == len(exploded)-1 {
 		path.add(fieldName)
-		//fmt.Println("value", fieldName, fieldsTree.last().Get(fieldName).Name)
+		//fmt.Println("value", fieldName, lastValue.Get(fieldName).Name)
 
-		f := lastValue.Get(fieldName)
-		f.Name = strings.Join(path, ".")
-		rules := s.rules[exploded.String()].Rules
-		f.Rules = rules
-		//fmt.Println("f", f)
-
+		// for arrays
 		if strings.Contains(exploded[index], "[]") {
-			if f.Items != nil && len(f.Items) > 0 {
+			if parent.Items != nil && len(parent.Items) > 0 {
 				path[len(path)-1] = strings.Trim(path[len(path)-1], "[]")
-				for i, item := range f.Items {
+				for i, item := range parent.Items {
 					singleItem := item.Get("value")
 					singleItem.Value = item
 					singleItem.Name = strings.Join(path, ".") + "[" + strconv.Itoa(i) + "]"
@@ -340,19 +341,19 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 			}
 
 			// there is no items in array
-			f.Value = nil
-			*values = append(*values, f)
+			parent.Value = nil
+			*values = append(*values, parent)
 
 			return
 		}
 
-		*values = append(*values, f)
+		*values = append(*values, parent)
 
 		return
 	}
 
 	//fmt.Println("fieldsTree.last()", fieldsTree.last().Get(fieldName))
-	if fieldsTree.last().Get(fieldName).Properties != nil {
+	if lastValue.Get(fieldName).Properties != nil {
 		path.add(fieldName)
 		fieldsMap := fieldsTree.last().Get(fieldName).Properties
 		fieldsTree = append(fieldsTree, fieldsMap)
@@ -360,9 +361,7 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 		s.getValue(exploded, index+1, fieldsTree, values, path)
 
 		path = path[:len(path)-1]
-	}
-
-	if fieldsTree.last().Get(fieldName).Items != nil {
+	} else if lastValue.Get(fieldName).Items != nil {
 		for i, item := range fieldsTree.last().Get(fieldName).Items {
 			path.add(strings.Trim(fieldName, "[]") + "[" + strconv.Itoa(i) + "]")
 			fieldsTree = append(fieldsTree, item)
@@ -372,7 +371,13 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 			fieldsTree = fieldsTree[:len(fieldsTree)-1]
 			path = path[:len(path)-1]
 		}
+	} else {
+		for j := index; j < len(exploded); j++ {
+			parent.Name += "." + exploded[j]
+		}
+		*values = append(*values, parent)
 	}
+
 }
 
 func (s *SchemaValidator) Validate() error {

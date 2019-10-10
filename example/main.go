@@ -83,6 +83,8 @@ func main() {
 		],
 		"variants": [
 			{
+				"isEnabled": true,
+				"inventory": true,
 				"content": [
 					{
 						"language": "pl",
@@ -99,10 +101,7 @@ func main() {
 					{
 						"images": [
 							{
-								"url": null
-							},
-							{
-								"url": null
+								"url": "http://asd"
 							}
 						]
 					}
