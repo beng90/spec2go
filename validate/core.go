@@ -119,8 +119,8 @@ func (v ValuesMap) Add(path string, value interface{}) {
 
 type RulesMap map[string]Rule
 type Rule struct {
-	Path   string
-	Rules  []string
+	Path   FieldPath
+	Rules  Rules
 	Passed bool
 }
 
@@ -150,7 +150,8 @@ func (s *SchemaValidator) AddRule(path string, rule string) {
 	}
 
 	rulesSlice := strings.Split(rule, ",")
-	s.rules[path] = Rule{path, rulesSlice, false}
+	pathSlice := strings.Split(path, ".")
+	s.rules[path] = Rule{pathSlice, rulesSlice, false}
 }
 
 func (s *SchemaValidator) hasRule(path []string) bool {
@@ -320,24 +321,25 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 
 		f := lastValue.Get(fieldName)
 		f.Name = strings.Join(path, ".")
-		f.Rules = s.rules[exploded.String()].Rules
+		rules := s.rules[exploded.String()].Rules
+		f.Rules = rules
 		//fmt.Println("f", f)
 
 		if strings.Contains(exploded[index], "[]") {
-			//fmt.Println(f.Items)
 			if f.Items != nil && len(f.Items) > 0 {
 				path[len(path)-1] = strings.Trim(path[len(path)-1], "[]")
 				for i, item := range f.Items {
-					//path = append(path, "["+strconv.Itoa(i)+"]")
 					singleItem := item.Get("value")
+					singleItem.Value = item
 					singleItem.Name = strings.Join(path, ".") + "[" + strconv.Itoa(i) + "]"
-					singleItem.Rules = s.rules[exploded.String()].Rules
+					singleItem.Rules = rules
 					*values = append(*values, singleItem)
 				}
 
 				return
 			}
 
+			// there is no items in array
 			f.Value = nil
 			*values = append(*values, f)
 
@@ -377,8 +379,9 @@ func (s *SchemaValidator) Validate() error {
 	data := FieldsArray{s.requestBody}
 	values := &[]FieldSchema{}
 
-	s.getValue(strings.Split("additionalInfo[].valuesIds[]", "."), 0, data, values, []string{})
-	s.getValue(strings.Split("additionalInfo[].id", "."), 0, data, values, []string{})
+	for _, rule := range s.rules {
+		s.getValue(rule.Path, 0, data, values, []string{})
+	}
 
 	//fmt.Println("values", values)
 

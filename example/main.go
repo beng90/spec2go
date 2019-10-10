@@ -73,15 +73,40 @@ func main() {
 		"brand": "123",
 		"additionalInfo": [
 			{
-				"id": 1,
+				"id": "1",
 				"valuesIds": [
 					"222",
 					"333",
 					"444"
 				]
-			},
+			}
+		],
+		"variants": [
 			{
-				"id": "2"
+				"content": [
+					{
+						"language": "pl",
+						"description": "asd"
+					}
+				],
+				"tags": [
+					{
+						"id": "123",
+						"valueId": "123"
+					}
+				],
+				"media": [
+					{
+						"images": [
+							{
+								"url": null
+							},
+							{
+								"url": null
+							}
+						]
+					}
+				]
 			}
 		]
 	}`
