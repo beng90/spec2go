@@ -331,8 +331,10 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 				path[len(path)-1] = strings.Trim(path[len(path)-1], "[]")
 				for i, item := range parent.Items {
 					singleItem := item.Get("value")
-					singleItem.Value = item
-					singleItem.Name = strings.Join(path, ".") + "[" + strconv.Itoa(i) + "]"
+					// TODO: check if its array of strings
+					singleItem.Value = item.Get("value").Value
+					//fmt.Println("singleItem", item.Get("value").Value)
+					singleItem.Name = path.String() + "[" + strconv.Itoa(i) + "]"
 					singleItem.Rules = rules
 					*values = append(*values, singleItem)
 				}
@@ -347,7 +349,14 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 			return
 		}
 
-		*values = append(*values, parent)
+		//if lastValue[fieldName].Value == nil {
+		current := lastValue[fieldName]
+		current.Name = path.String()
+		current.Rules = rules
+		*values = append(*values, current)
+		//}
+
+		//*values = append(*values, parent)
 
 		return
 	}

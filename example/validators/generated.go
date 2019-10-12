@@ -12,9 +12,10 @@ func AddOfferValidate(v *validator.Validate, req *http.Request) error {
 		return err
 	}
 
-	//schemaValidator.AddRule("additionalInfo[]", "omitempty")
-	//schemaValidator.AddRule("additionalInfo[].id", "required,string")
-	//schemaValidator.AddRule("additionalInfo[].valuesIds[]", "required,min=1,string")
+	schemaValidator.AddRule("additionalInfo[]", "omitempty")
+	schemaValidator.AddRule("additionalInfo[].id", "required,string")
+	schemaValidator.AddRule("additionalInfo[].valuesIds", "required,min=1")
+	schemaValidator.AddRule("additionalInfo[].valuesIds[]", "required,min=1,string")
 	//schemaValidator.AddRule("brand", "omitempty,string")
 	//schemaValidator.AddRule("categoryId", "required,string,max=16")
 	//schemaValidator.AddRule("defaultLanguage", "omitempty,string,min=2,max=2")

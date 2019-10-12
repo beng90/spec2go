@@ -84,7 +84,6 @@ func main() {
 		"variants": [
 			{
 				"isEnabled": true,
-				"inventory": true,
 				"content": [
 					{
 						"language": "pl",
