@@ -322,6 +322,7 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 
 	// last path element
 	if index == len(exploded)-1 {
+		//fmt.Println("exploded", exploded[index], fieldName)
 		path.add(fieldName)
 		//fmt.Println("value", fieldName, lastValue.Get(fieldName).Name)
 
@@ -344,6 +345,7 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 
 			// there is no items in array
 			parent.Value = nil
+			parent.Name = path.String()
 			*values = append(*values, parent)
 
 			return
@@ -351,6 +353,7 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 
 		//if lastValue[fieldName].Value == nil {
 		current := lastValue[fieldName]
+		//fmt.Println("current", current.Value)
 		current.Name = path.String()
 		current.Rules = rules
 		*values = append(*values, current)
@@ -371,7 +374,9 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 
 		path = path[:len(path)-1]
 	} else if lastValue.Get(fieldName).Items != nil {
+		//fmt.Println("path", exploded.String(), exploded[index+1], fieldsTree.last().Get(fieldName).Items[0].Get(exploded[index+1]).Value)
 		for i, item := range fieldsTree.last().Get(fieldName).Items {
+			//fmt.Println("x", item.Get("value").Value)
 			path.add(strings.Trim(fieldName, "[]") + "[" + strconv.Itoa(i) + "]")
 			fieldsTree = append(fieldsTree, item)
 
@@ -381,9 +386,15 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 			path = path[:len(path)-1]
 		}
 	} else {
-		for j := index; j < len(exploded); j++ {
-			parent.Name += "." + exploded[j]
-		}
+		path.add(fieldName)
+		parent.Name = "asd"
+		//	for j := index; j < len(exploded); j++ {
+		//		if parent.Name == "" {
+		//			parent.Name += exploded[j]
+		//		} else {
+		//			parent.Name += "." + exploded[j]
+		//		}
+		//	}
 		*values = append(*values, parent)
 	}
 
@@ -400,9 +411,15 @@ func (s *SchemaValidator) Validate() error {
 	//fmt.Println("values", values)
 
 	for _, field := range *values {
-		//fmt.Println("field.Rules", field.Rules, field.Value)
-		err := s.validator.Var(field.Value, field.Rules.String())
-		try(s.errors, field.Name, err)
+		//fmt.Println("field.Rules", field.Rules, field.Value, reflect.TypeOf(field.Value))
+		switch field.Value.(type) {
+		case bool:
+			err := s.validator.Var(field.Value, field.Rules.ForBool().String())
+			try(s.errors, field.Name, err)
+		default:
+			err := s.validator.Var(field.Value, field.Rules.String())
+			try(s.errors, field.Name, err)
+		}
 	}
 
 	//s.walk(s.requestBody, []string{}, []TreeField{})

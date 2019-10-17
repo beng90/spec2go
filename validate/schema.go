@@ -11,6 +11,19 @@ func (r Rules) String() string {
 	return strings.Join(r, ",")
 }
 
+func (r Rules) ForBool() Rules {
+	rr := []string{}
+
+	for _, rule := range r {
+		if strings.Contains(rule, "min") {
+			continue
+		}
+		rr = append(rr, rule)
+	}
+
+	return rr
+}
+
 func (r Rules) Required() bool {
 	for _, rule := range r {
 		if rule == "required" {
@@ -55,7 +68,7 @@ func (m MapField) Get(index string) FieldSchema {
 }
 
 func (f FieldsArray) Get(index int) *FieldSchema {
-	//fmt.Println("Get", index, len(m))
+	//fmt.Println("Get", index)
 
 	if index >= len(f) {
 		return nil

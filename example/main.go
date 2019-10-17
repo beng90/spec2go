@@ -31,58 +31,15 @@ func NewValidator() *validator.Validate {
 	return v
 }
 
-type SingleRule struct {
-	Rule     string
-	Children interface{}
-}
-type RulesMap map[string]SingleRule
-
-var somerules RulesMap = RulesMap{
-	"categoryId": SingleRule{Rule: "required,string"},
-	"brand":      SingleRule{Rule: "required,string"},
-	"additionalInfo": SingleRule{
-		Rule: "",
-		Children: map[string]SingleRule{
-			"id": {
-				Rule: "required,string",
-			},
-			"valuesIds": {
-				Rule: "required,min=1",
-				Children: []SingleRule{
-					{
-						Rule: "string",
-					},
-				},
-			},
-		},
-	},
-}
-
-type testObject struct {
-	CategoryId     interface{} `validate:"required,string"`
-	Brand          interface{} `validate:"required,string"`
-	AdditionalInfo []struct {
-		Id        interface{}   `validate:"required,string"`
-		ValuesIds []interface{} `validate:"required,min=1"`
-	}
-}
-
 func main() {
 	requestBody := `{
 		"categoryId": "123",
 		"brand": "123",
 		"additionalInfo": [
-			{
-				"id": "1",
-				"valuesIds": [
-					"222",
-					"333",
-					"444"
-				]
-			}
 		],
 		"variants": [
 			{
+				"inventory": {},
 				"isEnabled": true,
 				"content": [
 					{
@@ -109,8 +66,12 @@ func main() {
 		]
 	}`
 
+	//requestBody2 := `{
+	//}`
+
 	var errs error
 	req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBuffer([]byte(requestBody)))
+	//req, _ = http.NewRequest(http.MethodGet, "/", bytes.NewBuffer([]byte(requestBody2)))
 
 	v := NewValidator()
 
@@ -126,13 +87,6 @@ func main() {
 	if json.Valid(buffer) == false {
 		panic(validate.ErrInvalidJSON)
 	}
-
-	var x testObject
-	if err := json.Unmarshal(buffer, &x); err != nil {
-		panic(err)
-	}
-
-	errs = v.Struct(x)
 
 	//fmt.Printf("x: %#v\n", errs)
 	//return
