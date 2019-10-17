@@ -387,14 +387,14 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 		}
 	} else {
 		path.add(fieldName)
-		parent.Name = "asd"
-		//	for j := index; j < len(exploded); j++ {
-		//		if parent.Name == "" {
-		//			parent.Name += exploded[j]
-		//		} else {
-		//			parent.Name += "." + exploded[j]
-		//		}
-		//	}
+		//parent.Name = "asd"
+		for j := index; j < len(exploded); j++ {
+			if parent.Name == "" {
+				parent.Name += exploded[j]
+			} else {
+				parent.Name += "." + exploded[j]
+			}
+		}
 		*values = append(*values, parent)
 	}
 
