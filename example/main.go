@@ -33,37 +33,6 @@ func NewValidator() *validator.Validate {
 
 func main() {
 	requestBody := `{
-		"categoryId": "123",
-		"brand": "123",
-		"additionalInfo": [
-		],
-		"variants": [
-			{
-				"inventory": {},
-				"isEnabled": true,
-				"content": [
-					{
-						"language": "pl",
-						"description": "asd"
-					}
-				],
-				"tags": [
-					{
-						"id": "123",
-						"valueId": 123
-					}
-				],
-				"media": [
-					{
-						"images": [
-							{
-								"url": "dupa://"
-							}
-						]
-					}
-				]
-			}
-		]
 	}`
 
 	//requestBody2 := `{

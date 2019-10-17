@@ -408,8 +408,6 @@ func (s *SchemaValidator) Validate() error {
 		s.getValue(rule.Path, 0, data, values, []string{})
 	}
 
-	//fmt.Println("values", values)
-
 	for _, field := range *values {
 		//fmt.Println("field.Rules", field.Rules, field.Value, reflect.TypeOf(field.Value))
 		switch field.Value.(type) {
@@ -422,52 +420,7 @@ func (s *SchemaValidator) Validate() error {
 		}
 	}
 
-	//s.walk(s.requestBody, []string{}, []TreeField{})
-	//s.requestBody["additionalInfo"].Rules = []string{"zzz", "yyy"}
-	//fmt.Printf("additionalInfo %#v\n", s.requestBody["additionalInfo"].Rules)
-	//fmt.Printf("brand %#v\n", s.requestBody["brand"].Rules)
-	//fmt.Printf("s.requestBody:\n %#v\n", s.requestBody["additionalInfo"].Items[0]["id"].Rules)
-
-	//for fieldName, rule := range s.rules {
-	//	//fmt.Println("field", fieldName, s.valuesMap["additionalInfo[0].id"])
-	//	if value, ok := s.valuesMap[fieldName]; ok {
-	//		err := s.validator.Var(value, rule.Rules)
-	//		try(errs, rule.Path, err)
-	//	} else {
-	//		err := s.validator.Var(nil, rule.Rules)
-	//		try(errs, rule.Path, err)
-	//	}
-	//}
-
-	//for _, rule := range s.rules {
-	//	value := s.requestBody.GetVal(rule.Path)
-	//
-	//	switch v := value.(type) {
-	//	case []jsonField:
-	//		if len(v) > 0 {
-	//			for _, vv := range v {
-	//				debug("val", vv.value, "rule", rule.Rules)
-	//				switch vvv := vv.value.(type) {
-	//				case []interface{}:
-	//					for _, singleValue := range vvv {
-	//						err := s.validator.Var(singleValue, rule.Rules)
-	//						try(errors, rule.Path, err)
-	//					}
-	//				default:
-	//					err := s.validator.Var(vv.value, rule.Rules)
-	//					try(errors, rule.Path, err)
-	//				}
-	//			}
-	//		} else {
-	//			err := s.validator.Var(v, rule.Rules)
-	//			try(errors, rule.Path, err)
-	//		}
-	//	default:
-	//		fmt.Printf("Default: %T\n", v)
-	//		err := s.validator.Var(v, rule.Rules)
-	//		try(errors, rule.Path, err)
-	//	}
-	//}
+	// TODO: sort errors by fieldname
 
 	return s.errors
 }
