@@ -50,14 +50,14 @@ func main() {
 				"tags": [
 					{
 						"id": "123",
-						"valueId": "123"
+						"valueId": 123
 					}
 				],
 				"media": [
 					{
 						"images": [
 							{
-								"url": "http://asd"
+								"url": "dupa://"
 							}
 						]
 					}

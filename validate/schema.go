@@ -15,7 +15,7 @@ func (r Rules) ForBool() Rules {
 	rr := []string{}
 
 	for _, rule := range r {
-		if strings.Contains(rule, "min") {
+		if strings.Contains(rule, "min") || strings.Contains(rule, "max") {
 			continue
 		}
 		rr = append(rr, rule)
