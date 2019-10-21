@@ -25,15 +25,16 @@ func NewValidator() *validator.Validate {
 		return name
 	})
 
+	// custom validations
 	_ = v.RegisterValidation("string", validate.IsString)
 
-	// custom validations
 	return v
 }
 
 func main() {
 	requestBody := `{
-		"categoryId": "123"
+		"categoryId": "123",
+		"variants": []
 	}`
 
 	var errs error
@@ -54,8 +55,6 @@ func main() {
 		panic(validate.ErrInvalidJSON)
 	}
 
-	// flag to turn on debug mode
-	validate.IsDebugMode = false
 	errs = validators.AddOfferValidate(v, req)
 
 	switch vErr := errs.(type) {

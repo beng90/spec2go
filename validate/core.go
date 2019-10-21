@@ -20,9 +20,8 @@ type SchemaValidator struct {
 
 type RulesMap map[string]Rule
 type Rule struct {
-	Path   FieldPath
-	Rules  Rules
-	Passed bool
+	Path  FieldPath
+	Rules Rules
 }
 
 func (r *Rule) Has(name string) bool {
@@ -51,12 +50,12 @@ func (path *FieldPath) add(s string) {
 	*path = append(*path, s)
 }
 
-func (path *FieldPath) String() string {
-	return strings.Join(*path, ".")
-}
-
 func (path FieldPath) last() string {
 	return path[len(path)-1]
+}
+
+func (path *FieldPath) String() string {
+	return strings.Join(*path, ".")
 }
 
 func getRequestBody(req *http.Request) (requestBody MapField, err error) {
@@ -106,7 +105,7 @@ func (s *SchemaValidator) AddRule(path string, rule string) {
 
 	rulesSlice := strings.Split(rule, ",")
 	pathSlice := strings.Split(path, ".")
-	s.rules[path] = Rule{pathSlice, rulesSlice, false}
+	s.rules[path] = Rule{pathSlice, rulesSlice}
 }
 
 func (s *SchemaValidator) HasRule(path []string) bool {
@@ -117,7 +116,7 @@ func (s *SchemaValidator) HasRule(path []string) bool {
 	return false
 }
 
-func (s *SchemaValidator) getRule(path []string) *Rule {
+func (s *SchemaValidator) GetRule(path []string) *Rule {
 	if rule, ok := s.rules[s.ruleName(path)]; ok {
 		return &rule
 	}
@@ -155,10 +154,9 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 			if parent.Items != nil && len(parent.Items) > 0 {
 				path[len(path)-1] = strings.Trim(path[len(path)-1], "[]")
 				for i, item := range parent.Items {
-					singleItem := item.Get("value")
+					singleItem := item.Get("arrayItem")
 					// TODO: check if its array of strings
-					singleItem.Value = item.Get("value").Value
-					//fmt.Println("singleItem", item.Get("value").Value)
+					singleItem.Value = item.Get("arrayItem").Value
 					singleItem.Name = path.String() + "[" + strconv.Itoa(i) + "]"
 					singleItem.Rules = rules
 					*values = append(*values, singleItem)
@@ -206,15 +204,11 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 		}
 	} else {
 		// not last element - without nodes
-		pathNew := path
-		if len(pathNew) > 0 {
-			pathNew[len(path)-1] = strings.Trim(pathNew[len(pathNew)-1], "[]")
+		if len(path) > 0 {
+			path[len(path)-1] = strings.Trim(path[len(path)-1], "[]")
 		} else {
-			pathNew.add(fieldName)
+			path.add(fieldName)
 		}
-
-		//fmt.Println("pathNew", pathNew)
-		//path.add(fieldName)
 
 		for j := index; j < len(exploded); j++ {
 			if parent.Name == "" {
@@ -224,7 +218,7 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 			}
 		}
 
-		parentRules := s.getRule(pathNew)
+		parentRules := s.GetRule(path)
 		if parentRules.Has("required") {
 			*values = append(*values, parent)
 		}

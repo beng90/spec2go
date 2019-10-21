@@ -114,9 +114,9 @@ func (f *FieldSchema) UnmarshalJSON(data []byte) error {
 			switch vv.(type) {
 			case string, float64:
 				f.Items = append(f.Items, MapField{
-					"value": FieldSchema{
+					"arrayItem": FieldSchema{
 						Type:  "item",
-						Name:  "value",
+						Name:  "arrayItem",
 						Value: vv,
 					},
 				})
