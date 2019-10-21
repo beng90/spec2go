@@ -2,8 +2,29 @@ package validate
 
 import (
 	"encoding/json"
+	"fmt"
+	"gopkg.in/go-playground/validator.v9"
 	"strings"
 )
+
+type FieldError struct {
+	Field            string
+	Rule             string
+	Value            interface{}
+	Accepted         string
+	ValidationErrors validator.ValidationErrors
+}
+
+func (v FieldError) Error() string {
+	msg := fmt.Sprintf(`Field '%s' failed in '%s' rule`, v.Field, v.Rule)
+
+	values := v.Accepted
+	if values != "" {
+		msg += ", available values: " + values
+	}
+
+	return msg
+}
 
 type Rules []string
 
@@ -68,16 +89,13 @@ func (m MapField) Get(index string) FieldSchema {
 }
 
 func (f FieldsArray) Get(index int) *FieldSchema {
-	//fmt.Println("Get", index)
-
 	if index >= len(f) {
 		return nil
 	}
 
 	field := &FieldSchema{
-		Type: "",
-		Name: "",
-		//Value:      m[index]["value"].Value,
+		Type:       "",
+		Name:       "",
 		Value:      "",
 		Rules:      nil,
 		Properties: nil,

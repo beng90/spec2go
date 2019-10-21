@@ -65,3 +65,17 @@ type ValidationErrors map[string][]FieldError
 func (v ValidationErrors) Error() string {
 	return ""
 }
+
+func (errs ValidationErrors) try(fieldName string, err error) {
+	if err != nil {
+		e := err.(validator.ValidationErrors)
+
+		errs[fieldName] = append(errs[fieldName], FieldError{
+			Field:            fieldName,
+			Rule:             e[0].Tag(),
+			Value:            e[0].Value(),
+			Accepted:         e[0].Param(),
+			ValidationErrors: e,
+		})
+	}
+}

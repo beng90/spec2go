@@ -33,14 +33,11 @@ func NewValidator() *validator.Validate {
 
 func main() {
 	requestBody := `{
+		"categoryId": "123"
 	}`
-
-	//requestBody2 := `{
-	//}`
 
 	var errs error
 	req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBuffer([]byte(requestBody)))
-	//req, _ = http.NewRequest(http.MethodGet, "/", bytes.NewBuffer([]byte(requestBody2)))
 
 	v := NewValidator()
 
@@ -57,9 +54,6 @@ func main() {
 		panic(validate.ErrInvalidJSON)
 	}
 
-	//fmt.Printf("x: %#v\n", errs)
-	//return
-
 	// flag to turn on debug mode
 	validate.IsDebugMode = false
 	errs = validators.AddOfferValidate(v, req)
@@ -74,5 +68,4 @@ func main() {
 			log.Println(vErr)
 		}
 	}
-	//fmt.Printf("errs %#v\n", errs)
 }
