@@ -155,7 +155,7 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 				path[len(path)-1] = strings.Trim(path[len(path)-1], "[]")
 				for i, item := range parent.Items {
 					singleItem := item.Get("arrayItem")
-					// TODO: check if its array of strings
+					// check if its array of strings
 					singleItem.Value = item.Get("arrayItem").Value
 					singleItem.Name = path.String() + "[" + strconv.Itoa(i) + "]"
 					singleItem.Rules = rules

@@ -2,6 +2,7 @@ package validate
 
 import (
 	"errors"
+	"github.com/beng90/spec2go/validate/validations"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 	"regexp"
@@ -13,10 +14,11 @@ var (
 
 func registerCustomValidations(validator *validator.Validate) {
 	_ = validator.RegisterValidation("ISO8601", IsISO8601Date)
-	_ = validator.RegisterValidation("boolean", IsBoolean)
-	_ = validator.RegisterValidation("string", IsString)
+	_ = validator.RegisterValidation("boolean", validations.IsBoolean)
+	_ = validator.RegisterValidation("string", validations.IsString)
 	_ = validator.RegisterValidation("integer", IsNumber)
 	_ = validator.RegisterValidation("object", IsObject)
+	_ = validator.RegisterValidation("notblank", validations.NotBlank)
 }
 
 func IsISO8601Date(fl validator.FieldLevel) bool {
@@ -24,22 +26,6 @@ func IsISO8601Date(fl validator.FieldLevel) bool {
 	ISO8601DateRegex := regexp.MustCompile(ISO8601DateRegexString)
 
 	return ISO8601DateRegex.MatchString(fl.Field().String())
-}
-
-func IsBoolean(fl validator.FieldLevel) bool {
-	if fl.Field().Kind() == reflect.Bool {
-		return true
-	}
-
-	return false
-}
-
-func IsString(fl validator.FieldLevel) bool {
-	if fl.Field().Kind() == reflect.String {
-		return true
-	}
-
-	return false
 }
 
 func IsNumber(fl validator.FieldLevel) bool {

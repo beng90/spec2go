@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/beng90/spec2go/example/validators"
 	"github.com/beng90/spec2go/validate"
+	"github.com/beng90/spec2go/validate/validations"
 	"gopkg.in/go-playground/validator.v9"
 	"io/ioutil"
 	"log"
@@ -26,7 +27,7 @@ func NewValidator() *validator.Validate {
 	})
 
 	// custom validations
-	_ = v.RegisterValidation("string", validate.IsString)
+	_ = v.RegisterValidation("string", validations.IsString)
 
 	return v
 }
