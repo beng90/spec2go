@@ -119,6 +119,22 @@ func getExpectedError(fieldName, rule string, value interface{}, accepted string
 	}}}
 }
 
+func TestNewSchemaValidator_Validate_Passed(t *testing.T) {
+	input := Input{
+		Rules:      "required,integer,min=1,max=999",
+		Pattern:    "",
+		Input:      `{"categoryId": 123}`,
+		Expected:   nil,
+		ErrorField: "categoryId",
+	}
+
+	schemaValidator := getSchemaValidator(input.Input)
+	schemaValidator.AddRule(input.ErrorField, input.Rules, &input.Pattern)
+	err := schemaValidator.Validate()
+
+	assert.Equal(t, err, nil)
+}
+
 func TestSchemaValidator_Validate_String(t *testing.T) {
 	fieldName := "categoryId"
 

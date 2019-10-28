@@ -253,17 +253,27 @@ func (s *SchemaValidator) Validate() error {
 			s.errors.try(field.Name, err)
 
 			if field.Rule.Pattern != nil && field.Value != nil {
-				err := s.validatePattern(field.Name, *field.Rule.Pattern, field.Value.(string))
-				if err != nil {
-					s.errors[field.Name] = append(s.errors[field.Name], *err)
+				switch field.Value.(type) {
+				case string:
+					if field.Value.(string) == "" {
+						break
+					}
+					err := s.validatePattern(field.Name, *field.Rule.Pattern, field.Value.(string))
+					if err != nil {
+						s.errors[field.Name] = append(s.errors[field.Name], *err)
+					}
 				}
 			}
 		}
 	}
 
-	// TODO: sort errors by fieldname
+	// TODO: sort errors by fieldName
 
-	return s.errors
+	if len(s.errors) > 0 {
+		return s.errors
+	}
+
+	return nil
 }
 
 func (s *SchemaValidator) validatePattern(fieldName, pattern, value string) *FieldError {
