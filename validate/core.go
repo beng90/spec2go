@@ -20,8 +20,9 @@ type SchemaValidator struct {
 
 type RulesMap map[string]Rule
 type Rule struct {
-	Path  FieldPath
-	Rules Rules
+	Path    FieldPath
+	Rules   Rules
+	Pattern *string
 }
 
 func (r *Rule) Has(name string) bool {
@@ -56,6 +57,10 @@ func (path FieldPath) last() string {
 
 func (path *FieldPath) String() string {
 	return strings.Join(*path, ".")
+}
+
+func Pattern(val string) *string {
+	return &val
 }
 
 func getRequestBody(req *http.Request) (requestBody MapField, err error) {
@@ -98,14 +103,14 @@ func NewSchemaValidator(v *validator.Validate, req *http.Request) (schemaValidat
 	return
 }
 
-func (s *SchemaValidator) AddRule(path string, rule string) {
+func (s *SchemaValidator) AddRule(path string, rule string, pattern *string) {
 	if s.rules == nil {
 		s.rules = make(RulesMap)
 	}
 
 	rulesSlice := strings.Split(rule, ",")
 	pathSlice := strings.Split(path, ".")
-	s.rules[path] = Rule{pathSlice, rulesSlice}
+	s.rules[path] = Rule{pathSlice, rulesSlice, pattern}
 }
 
 func (s *SchemaValidator) HasRule(path []string) bool {
@@ -138,7 +143,8 @@ func (s *SchemaValidator) ruleName(path []string) string {
 func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree FieldsArray, values *[]FieldSchema, path FieldPath) {
 	fieldName := exploded[index]
 	lastValue := fieldsTree.last()
-	rules := s.rules[exploded.String()].Rules
+	rule := s.rules[exploded.String()]
+	rules := rule.Rules
 	parent := lastValue.Get(fieldName)
 	parent.Name = path.String()
 	parent.Rules = rules
@@ -159,6 +165,7 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 					singleItem.Value = item.Get("arrayItem").Value
 					singleItem.Name = path.String() + "[" + strconv.Itoa(i) + "]"
 					singleItem.Rules = rules
+					singleItem.Rule = rule
 					*values = append(*values, singleItem)
 				}
 
@@ -168,6 +175,7 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 			// there is no items in array
 			parent.Value = nil
 			parent.Name = path.String()
+			parent.Rule = rule
 			*values = append(*values, parent)
 
 			return
@@ -176,6 +184,7 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 		current := lastValue[fieldName]
 		current.Name = path.String()
 		current.Rules = rules
+		current.Rule = rule
 		*values = append(*values, current)
 
 		return
@@ -242,10 +251,35 @@ func (s *SchemaValidator) Validate() error {
 		default:
 			err := s.validator.Var(field.Value, field.Rules.String())
 			s.errors.try(field.Name, err)
+
+			if field.Rule.Pattern != nil && field.Value != nil {
+				err := s.validatePattern(field.Name, *field.Rule.Pattern, field.Value.(string))
+				if err != nil {
+					s.errors[field.Name] = append(s.errors[field.Name], *err)
+				}
+			}
 		}
 	}
 
 	// TODO: sort errors by fieldname
 
 	return s.errors
+}
+
+func (s *SchemaValidator) validatePattern(fieldName, pattern, value string) *FieldError {
+	re := regexp.MustCompile(pattern)
+	isValid := re.MatchString(value)
+
+	if !isValid {
+		// return error
+		return &FieldError{
+			Field:            fieldName,
+			Rule:             "regexp",
+			Value:            value,
+			Accepted:         pattern,
+			ValidationErrors: nil,
+		}
+	}
+
+	return nil
 }

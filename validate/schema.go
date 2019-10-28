@@ -59,6 +59,7 @@ type FieldSchema struct {
 	Type       string
 	Name       string
 	Value      interface{}
+	Rule       Rule
 	Rules      Rules
 	Properties MapField
 	Items      FieldsArray

@@ -34,7 +34,7 @@ func NewValidator() *validator.Validate {
 
 func main() {
 	requestBody := `{
-		"categoryId": "123",
+		"categoryId": "123_12",
 		"variants": []
 	}`
 
