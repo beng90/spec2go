@@ -42,7 +42,7 @@ func TestNewSchemaValidator_InvalidJSON(t *testing.T) {
 	for _, data := range testData {
 		req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBuffer([]byte(data)))
 		v := NewValidator()
-		_, err := validate.NewSchemaValidator(v, req)
+		_, err := validate.NewSchemaValidator(v, req, nil)
 
 		assert.Equal(t, validate.ErrInvalidJSON, err)
 	}
@@ -51,7 +51,7 @@ func TestNewSchemaValidator_InvalidJSON(t *testing.T) {
 func getSchemaValidator(requestBody string) *validate.SchemaValidator {
 	req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBuffer([]byte(requestBody)))
 	v := NewValidator()
-	schemaValidator, _ := validate.NewSchemaValidator(v, req)
+	schemaValidator, _ := validate.NewSchemaValidator(v, req, nil)
 
 	return schemaValidator
 }
@@ -80,28 +80,29 @@ type Input struct {
 	Rules      string
 	Pattern    string
 	Input      string
-	Expected   validate.ValidationErrors
+	Expected   error
 	ErrorField string
 }
 
 func (i Input) Test(t *testing.T, err error) error {
 	//fmt.Printf("err %#v\n", err)
 
-	if len(i.Expected) > 0 {
+	if i.Expected != nil && len(i.Expected.(validate.ValidationErrors)) > 0 {
+		expected := i.Expected.(validate.ValidationErrors)
 		if x := err.(validate.ValidationErrors)[i.ErrorField]; x == nil {
 			return errors.New(fmt.Sprintf(`Wrong testing rule. Field "%s", rules "%s", value "%v".`, i.ErrorField, i.Rules, i.Input))
 		}
 
 		fieldErr := err.(validate.ValidationErrors)[i.ErrorField][0]
 
-		if expectedError := i.Expected[i.ErrorField]; expectedError == nil {
+		if expectedError := expected[i.ErrorField]; expectedError == nil {
 			return errors.New(fmt.Sprintf(`Expected error does not exist. Field "%s", rules "%s", value "%v".`, i.ErrorField, i.Rules, i.Input))
 		}
 
-		assert.Equal(t, i.Expected[i.ErrorField][0].Field, fieldErr.Field)
-		assert.Equal(t, i.Expected[i.ErrorField][0].Rule, fieldErr.Rule)
-		assert.Equal(t, i.Expected[i.ErrorField][0].Value, fieldErr.Value)
-		assert.Equal(t, i.Expected[i.ErrorField][0].Accepted, fieldErr.Accepted)
+		assert.Equal(t, expected[i.ErrorField][0].Field, fieldErr.Field)
+		assert.Equal(t, expected[i.ErrorField][0].Rule, fieldErr.Rule)
+		assert.Equal(t, expected[i.ErrorField][0].Value, fieldErr.Value)
+		assert.Equal(t, expected[i.ErrorField][0].Accepted, fieldErr.Accepted)
 	} else {
 		assert.Equal(t, i.Expected, err)
 	}
@@ -261,13 +262,13 @@ func TestSchemaValidator_Validate_Boolean(t *testing.T) {
 			Rules:      "notblank,boolean",
 			Input:      `{"isEnabled": false}`,
 			ErrorField: fieldName,
-			Expected:   validate.ValidationErrors{},
+			Expected:   nil,
 		},
 		{
 			Rules:      "required,boolean",
 			Input:      `{"isEnabled": true}`,
 			ErrorField: fieldName,
-			Expected:   validate.ValidationErrors{},
+			Expected:   nil,
 		},
 		{
 			Rules:      "boolean",
@@ -339,14 +340,14 @@ func TestSchemaValidator_Validate_Pattern(t *testing.T) {
 			Pattern:    pattern,
 			Input:      `{"countryCode": "pl"}`,
 			ErrorField: fieldName,
-			Expected:   validate.ValidationErrors{},
+			Expected:   nil,
 		},
 		{
 			Rules:      "required,string",
 			Pattern:    pattern,
 			Input:      `{"countryCode": "US"}`,
 			ErrorField: fieldName,
-			Expected:   validate.ValidationErrors{},
+			Expected:   nil,
 		},
 	}
 
@@ -404,7 +405,7 @@ func TestSchemaValidator_Validate_Array(t *testing.T) {
 			Rules:      "required,string,max=5",
 			Input:      `{"categories": []}`,
 			ErrorField: fieldName,
-			Expected:   validate.ValidationErrors{},
+			Expected:   nil,
 		},
 		{
 			Rules:      "required,string,max=5",
@@ -445,13 +446,13 @@ func TestSchemaValidator_Validate_NestedArray(t *testing.T) {
 			Rules:      "required,string,max=5",
 			Input:      `{}`,
 			ErrorField: fieldName,
-			Expected:   validate.ValidationErrors{},
+			Expected:   nil,
 		},
 		{
 			Rules:      "required,string,max=5",
 			Input:      `{"product": null}`,
 			ErrorField: fieldName,
-			Expected:   validate.ValidationErrors{},
+			Expected:   nil,
 		},
 		{
 			Rules:      "required,string,max=5",

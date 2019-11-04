@@ -2,6 +2,7 @@ package validate
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"gopkg.in/go-playground/validator.v9"
 	"io/ioutil"
@@ -16,6 +17,7 @@ type SchemaValidator struct {
 	requestBody MapField
 	rules       RulesMap
 	errors      ValidationErrors
+	context     context.Context
 }
 
 type RulesMap map[string]Rule
@@ -84,7 +86,11 @@ func getRequestBody(req *http.Request) (requestBody MapField, err error) {
 	return requestBody, nil
 }
 
-func NewSchemaValidator(v *validator.Validate, req *http.Request) (schemaValidator *SchemaValidator, err error) {
+func NewSchemaValidator(v *validator.Validate, req *http.Request, ctx context.Context) (schemaValidator *SchemaValidator, err error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	// custom validations
 	registerCustomValidations(v)
 
@@ -98,6 +104,7 @@ func NewSchemaValidator(v *validator.Validate, req *http.Request) (schemaValidat
 		requestBody,
 		make(RulesMap),
 		make(ValidationErrors),
+		ctx,
 	}
 
 	return
@@ -246,10 +253,10 @@ func (s *SchemaValidator) Validate() error {
 	for _, field := range *values {
 		switch field.Value.(type) {
 		case bool:
-			err := s.validator.Var(field.Value, field.Rules.ForBool().String())
+			err := s.validator.VarCtx(s.context, field.Value, field.Rules.ForBool().String())
 			s.errors.try(field.Name, err)
 		default:
-			err := s.validator.Var(field.Value, field.Rules.String())
+			err := s.validator.VarCtx(s.context, field.Value, field.Rules.String())
 			s.errors.try(field.Name, err)
 
 			if field.Rule.Pattern != nil && field.Value != nil {

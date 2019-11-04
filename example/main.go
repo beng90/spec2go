@@ -35,7 +35,7 @@ func NewValidator() *validator.Validate {
 func main() {
 	requestBody := `{
 		"categoryId": "123_12",
-		"variants": []
+		"variants": [{}]
 	}`
 
 	var errs error
@@ -56,7 +56,7 @@ func main() {
 		panic(validate.ErrInvalidJSON)
 	}
 
-	errs = validators.AddOfferValidate(v, req)
+	errs = validators.AddOfferValidate(v, req, nil)
 
 	switch vErr := errs.(type) {
 	case validate.ValidationErrors:
