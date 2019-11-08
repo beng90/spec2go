@@ -221,6 +221,9 @@ func (s *SchemaValidator) getValue(exploded FieldPath, index int, fieldsTree Fie
 	} else {
 		// not last element - without nodes
 		if len(path) > 0 {
+			if len(path) < len(exploded) {
+				path.add(exploded[index+1])
+			}
 			path[len(path)-1] = strings.Trim(path[len(path)-1], "[]")
 		} else {
 			path.add(fieldName)

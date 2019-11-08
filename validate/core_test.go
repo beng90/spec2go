@@ -523,29 +523,34 @@ func TestSchemaValidator_Validate_NestedArray(t *testing.T) {
 
 func TestSchemaValidator_Validate_NestedArrayWithField(t *testing.T) {
 	fieldName := "product.categories[].id"
+	pattern := `^\d+$`
 
 	testData := []Input{
 		{
 			Rules:      "required,string,max=5",
 			Input:      `{}`,
+			Pattern:    pattern,
 			ErrorField: fieldName,
 			Expected:   nil,
 		},
 		{
 			Rules:      "required,string,max=5",
 			Input:      `{"product": null}`,
+			Pattern:    pattern,
 			ErrorField: fieldName,
 			Expected:   nil,
 		},
 		{
 			Rules:      "required,string,max=5",
 			Input:      `{"product": {}}`,
+			Pattern:    pattern,
 			ErrorField: fieldName,
 			Expected:   nil,
 		},
 		{
 			Rules:      "required,string,max=5",
 			Input:      `{"product": { "categories": null}}`,
+			Pattern:    pattern,
 			ErrorField: fieldName,
 			Expected:   nil,
 		},
@@ -558,12 +563,21 @@ func TestSchemaValidator_Validate_NestedArrayWithField(t *testing.T) {
 		{
 			Rules:      "required,string,max=5",
 			Input:      `{"product": { "categories": true }}`,
+			Pattern:    pattern,
+			ErrorField: fieldName,
+			Expected:   nil,
+		},
+		{
+			Rules:      "required,string,max=5",
+			Input:      `{"product": { "someField": "123" }}`,
+			Pattern:    pattern,
 			ErrorField: fieldName,
 			Expected:   nil,
 		},
 		{
 			Rules:      "required,string,max=5",
 			Input:      `{"product": { "categories": {} }}`,
+			Pattern:    pattern,
 			ErrorField: fieldName,
 			Expected:   getExpectedError(fieldName, "required", nil, ""),
 		},
@@ -576,24 +590,28 @@ func TestSchemaValidator_Validate_NestedArrayWithField(t *testing.T) {
 		{
 			Rules:      "required,string,max=5",
 			Input:      `{"product": { "categories": [ { "id": 123 } ]}}`,
+			Pattern:    pattern,
 			ErrorField: "product.categories[0].id",
 			Expected:   getExpectedError("product.categories[0].id", "string", float64(123), ""),
 		},
 		{
 			Rules:      "required,string,max=5",
 			Input:      `{"product": { "categories": [ {"id": "asd"}, {"id": 123} ]}}`,
+			Pattern:    pattern,
 			ErrorField: "product.categories[1].id",
 			Expected:   getExpectedError("product.categories[1].id", "string", float64(123), ""),
 		},
 		{
 			Rules:      "required,string,min=2,max=5",
 			Input:      `{"product": { "categories": [ {"id": "1"} ]}}`,
+			Pattern:    pattern,
 			ErrorField: "product.categories[0].id",
 			Expected:   getExpectedError("product.categories[0].id", "min", "1", "2"),
 		},
 		{
 			Rules:      "required,string,min=2,max=5",
 			Input:      `{"product": { "categories": [ {"id": "123456"} ]}}`,
+			Pattern:    pattern,
 			ErrorField: "product.categories[0].id",
 			Expected:   getExpectedError("product.categories[0].id", "max", "123456", "5"),
 		},
@@ -601,7 +619,7 @@ func TestSchemaValidator_Validate_NestedArrayWithField(t *testing.T) {
 
 	for _, input := range testData {
 		schemaValidator := getSchemaValidator(input.Input)
-		schemaValidator.AddRule(fieldName, input.Rules, nil)
+		schemaValidator.AddRule(fieldName, input.Rules, &input.Pattern)
 		err := schemaValidator.Validate()
 
 		if err := input.Test(t, err); err != nil {
@@ -680,6 +698,91 @@ func TestSchemaValidator_Validate_NestedArray_ParentRequired(t *testing.T) {
 			Input:      `{"product": { "categories": [ "123456" ]}}`,
 			ErrorField: "product.categories[0]",
 			Expected:   getExpectedError("product.categories[0]", "max", "123456", "5"),
+		},
+	}
+
+	for _, input := range testData {
+		schemaValidator := getSchemaValidator(input.Input)
+		schemaValidator.AddRule("product", "required", nil)
+		schemaValidator.AddRule(fieldName, input.Rules, nil)
+		err := schemaValidator.Validate()
+
+		if err := input.Test(t, err); err != nil {
+			t.Error(err)
+		}
+	}
+}
+
+func TestSchemaValidator_Validate_NestedArrayField_ParentRequired(t *testing.T) {
+	fieldName := "product.categories[].id"
+	rulesString := "required,string,min=2,max=5"
+
+	testData := []Input{
+		{
+			Rules:      rulesString,
+			Input:      `{}`,
+			ErrorField: fieldName,
+			Expected:   getExpectedError(fieldName, "required", nil, ""),
+		},
+		{
+			Rules:      rulesString,
+			Input:      `{"product": null}`,
+			ErrorField: fieldName,
+			Expected:   getExpectedError(fieldName, "required", nil, ""),
+		},
+		{
+			Rules:      rulesString,
+			Input:      `{"product": true}`,
+			ErrorField: fieldName,
+			Expected:   getExpectedError(fieldName, "string", true, ""),
+		},
+		{
+			Rules:      rulesString,
+			Input:      `{"product": {}}`,
+			ErrorField: fieldName,
+			Expected:   nil,
+		},
+		{
+			Rules:      rulesString,
+			Input:      `{"product": { "categories": null}}`,
+			ErrorField: fieldName,
+			Expected:   nil,
+		},
+		{
+			Rules:      rulesString,
+			Input:      `{"product": { "categories": true}}`,
+			ErrorField: fieldName,
+			Expected:   nil,
+		},
+		{
+			Rules:      rulesString,
+			Input:      `{"product": { "categories": []}}`,
+			ErrorField: fieldName,
+			Expected:   nil,
+		},
+		{
+			Rules:      rulesString,
+			Input:      `{"product": { "categories": [ {"id": 123} ]}}`,
+			ErrorField: "product.categories[0].id",
+			Expected:   getExpectedError("product.categories[0].id", "string", float64(123), ""),
+		},
+		{
+			Rules:      rulesString,
+			Input:      `{"product": { "categories": [ {"id": "asd"}, {"id": 123} ]}}`,
+			ErrorField: "product.categories[1].id",
+			Expected:   getExpectedError("product.categories[1].id", "string", float64(123), ""),
+		},
+		{
+			Rules:      rulesString,
+			Input:      `{"product": { "categories": [ {"id": "1"} ]}}`,
+			ErrorField: "product.categories[0].id",
+			Expected:   getExpectedError("product.categories[0].id", "min", "1", "2"),
+		},
+		{
+			Rules:      rulesString,
+			Input:      `{"product": { "categories": [ {"id": "123456"} ]}}`,
+			ErrorField: "product.categories[0].id",
+			Expected:   getExpectedError("product.categories[0].id", "max", "123456", "5"),
 		},
 	}
 
