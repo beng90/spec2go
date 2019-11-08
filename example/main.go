@@ -35,7 +35,8 @@ func NewValidator() *validator.Validate {
 func main() {
 	requestBody := `{
 		"categoryId": "123_12",
-		"variants": [{}]
+		"variants": [{}],
+		"variant": {"tags": false}
 	}`
 
 	var errs error

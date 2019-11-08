@@ -44,6 +44,9 @@ var AddOfferValidationRules = []ValidationRule{
 	{"variants[].tags", "omitempty", nil},
 	{"variants[].tags[].id", "required,string,min=1,max=10", validate.Pattern(`^\d+$`)},
 	{"variants[].tags[].valueId", "required,string,min=1,max=10", validate.Pattern(`^\d+$`)},
+	{"variant.tags", "omitempty", nil},
+	{"variant.tags[].id", "required,string,min=1,max=16", validate.Pattern(`^\d+$`)},
+	{"variant.tags[].valueId", "required,string,min=1,max=16", validate.Pattern(`^\d+$`)},
 }
 
 func AddOfferValidate(v *validator.Validate, req *http.Request, ctx context.Context) error {
