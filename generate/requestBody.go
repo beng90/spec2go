@@ -1,4 +1,4 @@
-package main
+package generate
 
 import (
 	"fmt"
@@ -37,7 +37,7 @@ func getRequestBodyParameter(data yaml.MapSlice, paramName string) (param Parame
 	return
 }
 
-func getRequestBodyParameters(data yaml.MapSlice, path []string) map[string]*Parameter {
+func GetRequestBodyParameters(data yaml.MapSlice, path []string) map[string]*Parameter {
 	properties := make(map[string]*Parameter)
 
 	for _, content := range data {

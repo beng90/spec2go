@@ -1,20 +1,37 @@
-package validators
+package main
 
 import (
+    "context"
     "github.com/beng90/spec2go/validate"
 	"gopkg.in/go-playground/validator.v9"
 	"net/http"
 )
 
-{{range . }}{{ if .Parameters }}
-func {{ .Name }}(v *validator.Validate, req *http.Request) validate.ValidationErrors {
-	schemaValidator := validate.NewSchemaValidator(v, req)
-
+type ValidationRule struct {
+	Field   string
+	Rule    string
+	Pattern *string
+}
+{{ range . }}{{ if .Parameters }}
+var {{ .Name }}Rules = []ValidationRule{
     {{- range $parameter := .Parameters }}
     {{- if .Rules.String }}
-    schemaValidator.Validate("{{ $parameter.Name }}", "{{ .Rules }}")
+    {"{{ $parameter.Name }}", "{{ .Rules }}", nil},
     {{- end }}{{ end }}
+}
 
-	return schemaValidator.Errors()
+func {{ .Name }}(v *validator.Validate, req *http.Request, ctx context.Context) error {
+	schemaValidator, err := validate.NewSchemaValidator(v, req, ctx)
+    if err != nil {
+        return err
+    }
+
+    for _, vRule := range {{ .Name }}Rules {
+        schemaValidator.AddRule(vRule.Field, vRule.Rule, vRule.Pattern)
+    }
+
+	err = schemaValidator.Validate()
+
+    return err
 }
 {{ end }}{{ end }}
