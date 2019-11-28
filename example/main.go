@@ -2,10 +2,13 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/beng90/spec2go/example/validators"
 	"github.com/beng90/spec2go/validate"
+	"github.com/beng90/spec2go/validate/validations"
 	"gopkg.in/go-playground/validator.v9"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"reflect"
@@ -24,56 +27,37 @@ func NewValidator() *validator.Validate {
 	})
 
 	// custom validations
+	_ = v.RegisterValidation("string", validations.IsString)
+
 	return v
 }
 
 func main() {
 	requestBody := `{
-		"brand": "123",
-		"productName": "test",
-		"variants": [
-			{
-				"delivery": {
-					"shippingTemplateId": "5839c1a6-293f-43bf-ba8b-8a3cb19f4ea5"
-				},
-				"isEnabled": true,
-				"content": {
-					"description": "asd",
-					"language": "pl"
-				},
-				"price": "123",
-				"inventory": {
-					"size": 123
-				},
-				"media": {
-					"images": [
-						{
-							"type": "image",
-							"url": "https://psy-pies.com/pliki/image/foto/duze/foto54eefb49dad42.jpg",
-							"sortOrder": 1
-						},
-						{
-							"sortOrder": 2,
-							"url": "https://skuteczna-samoobrona.pl/wp-content/uploads/rottweiler.jpg"
-						}	
-					]
-				},
-				"tags": [
-					{
-						"id": "1"
-					}
-				]
-			}
-		]
+		"categoryId": "123_12",
+		"variants": [{}],
+		"variant": {"tags": false}
 	}`
 
+	var errs error
 	req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBuffer([]byte(requestBody)))
 
 	v := NewValidator()
 
-	// flag to turn on debug mode
-	validate.IsDebugMode = false
-	errs := validators.AddOfferValidate(v, req)
+	// Read body
+	buffer, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	// restore body in request
+	req.Body = ioutil.NopCloser(bytes.NewBuffer(buffer))
+
+	if json.Valid(buffer) == false {
+		panic(validate.ErrInvalidJSON)
+	}
+
+	errs = validators.AddOfferValidate(v, req, nil)
 
 	switch vErr := errs.(type) {
 	case validate.ValidationErrors:
@@ -85,5 +69,4 @@ func main() {
 			log.Println(vErr)
 		}
 	}
-	//fmt.Printf("errs %#v\n", errs)
 }
