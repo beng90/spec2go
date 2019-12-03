@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	file, err := ioutil.ReadFile("api.dereferenced.yml")
+	file, err := ioutil.ReadFile("openapi.yml")
 	if err != nil {
 		panic(err)
 	}

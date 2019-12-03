@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/beng90/spec2go/example/validators"
+	"github.com/beng90/spec2go/openapi"
 	"github.com/beng90/spec2go/validate"
 	"github.com/beng90/spec2go/validate/validations"
 	"gopkg.in/go-playground/validator.v9"
@@ -33,18 +33,22 @@ func NewValidator() *validator.Validate {
 }
 
 func main() {
+	// example request body
 	requestBody := `{
 		"categoryId": "123_12",
-		"variants": [{}],
+		"variants": [{"inventory": {}}],
 		"variant": {"tags": false}
 	}`
 
 	var errs error
+
+	// mocked request
 	req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBuffer([]byte(requestBody)))
 
+	// create new validator
 	v := NewValidator()
 
-	// Read body
+	// read body
 	buffer, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		panic(err)
@@ -53,12 +57,15 @@ func main() {
 	// restore body in request
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(buffer))
 
+	// verify if json is correct before validation
 	if json.Valid(buffer) == false {
 		panic(validate.ErrInvalidJSON)
 	}
 
-	errs = validators.AddOfferValidate(v, req, nil)
+	// final validation
+	errs = openapi.AddOfferValidate(v, req, nil)
 
+	// validator can return two types of error
 	switch vErr := errs.(type) {
 	case validate.ValidationErrors:
 		for _, e := range errs.(validate.ValidationErrors) {

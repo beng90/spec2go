@@ -16,7 +16,7 @@ type ValidationRule struct {
 var {{ .Name }}Rules = []ValidationRule{
     {{- range $parameter := .Parameters }}
     {{- if .Rules.String }}
-    {"{{ $parameter.Name }}", "{{ .Rules }}", nil},
+    {"{{ $parameter.Name }}", "{{ .Rules }}", {{- if .Pattern }}validate.Pattern(`{{ .Pattern }}`){{- else }}nil{{- end}}},
     {{- end }}{{ end }}
 }
 

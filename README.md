@@ -82,3 +82,20 @@ Generated file
         return err
     }
 ```
+
+### Using in code
+
+Working example available in example/ directory.
+
+    cd example
+    go run .
+    
+Result
+
+    [Field 'variants[0].isEnabled' failed in 'required' rule]
+    [Field 'variants[0].price' failed in 'required' rule]
+    [Field 'variants[0].inventory.size' failed in 'required' rule]
+    [Field 'variants[0].delivery' failed in 'required' rule]
+    [Field 'variants[0].media' failed in 'required' rule]
+    [Field 'productName' failed in 'required' rule]
+    [Field 'variants[0].content' failed in 'required' rule]

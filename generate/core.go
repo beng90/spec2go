@@ -1,7 +1,6 @@
 package generate
 
 import (
-	"fmt"
 	"gopkg.in/yaml.v2"
 	"strings"
 )
@@ -62,7 +61,7 @@ func walk(validators *[]Validator, spec yaml.MapSlice, path []string) {
 
 			if node.Key == SpecRequestBody {
 				//fmt.Println(node.Key, node.Value)
-				fmt.Println("generateValidatorsFromRequestBody", path)
+				//fmt.Println("generateValidatorsFromRequestBody", path)
 				parameters := GetRequestBodyParameters(nodeVal, path)
 				*validators = append(*validators, Validator{
 					Name:       strings.Title(path[0]) + "Validate",
