@@ -29,7 +29,7 @@ func main() {
 
 	t := template.Must(template.New("validators.tpl").ParseFiles(templateFiles...))
 
-	f, err := os.Create("generated/validators.go")
+	f, err := os.Create("openapi/validators.go")
 	if err != nil {
 		log.Println("create file: ", err)
 		return
