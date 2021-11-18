@@ -2,9 +2,11 @@ package validators
 
 import (
 	"context"
-	"github.com/beng90/spec2go/validate"
-	"gopkg.in/go-playground/validator.v9"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
+
+	"github.com/beng90/spec2go/validate"
 )
 
 type ValidationRule struct {

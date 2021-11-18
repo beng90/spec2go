@@ -1,9 +1,10 @@
 package validations
 
 import (
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 	"strings"
+
+	"github.com/go-playground/validator/v10"
 )
 
 // NotBlank is the validation function for validating if the current field

@@ -3,7 +3,7 @@ package openapi
 import (
     "context"
     "github.com/beng90/spec2go/validate"
-	"gopkg.in/go-playground/validator.v9"
+	"github.com/go-playground/validator/v10"
 	"net/http"
 )
 
