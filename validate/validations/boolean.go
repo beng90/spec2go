@@ -1,8 +1,9 @@
 package validations
 
 import (
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func IsBoolean(fl validator.FieldLevel) bool {

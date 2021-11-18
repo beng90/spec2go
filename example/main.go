@@ -2,17 +2,20 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/beng90/spec2go/openapi"
-	"github.com/beng90/spec2go/validate"
-	"github.com/beng90/spec2go/validate/validations"
-	"gopkg.in/go-playground/validator.v9"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"reflect"
 	"strings"
+
+	"github.com/go-playground/validator/v10"
+
+	"github.com/beng90/spec2go/openapi"
+	"github.com/beng90/spec2go/validate"
+	"github.com/beng90/spec2go/validate/validations"
 )
 
 func NewValidator() *validator.Validate {
@@ -63,7 +66,7 @@ func main() {
 	}
 
 	// final validation
-	errs = openapi.AddOfferValidate(v, req, nil)
+	errs = openapi.AddOfferValidate(v, req, context.Background())
 
 	// validator can return two types of error
 	switch vErr := errs.(type) {

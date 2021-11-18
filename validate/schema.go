@@ -3,8 +3,9 @@ package validate
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/go-playground/validator.v9"
 	"strings"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type FieldError struct {

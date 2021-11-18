@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"gopkg.in/go-playground/validator.v9"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type SchemaValidator struct {
@@ -263,22 +265,27 @@ func (s *SchemaValidator) Validate() error {
 			s.errors.try(field.Name, err)
 
 			if field.Rule.Pattern != nil && field.Value != nil {
-				switch field.Value.(type) {
-				case string:
-					if field.Value.(string) == "" {
-						break
-					}
-					err := s.validatePattern(field.Name, *field.Rule.Pattern, field.Value.(string))
-					if err != nil {
-						s.errors[field.Name] = append(s.errors[field.Name], *err)
-					}
+				var fVal string
+				switch v := field.Value.(type) {
+				case float64:
+					fVal = fmt.Sprintf("%.4f", v)
+				default:
+					fVal = field.Value.(string)
+				}
+
+				if fVal == "" {
+					break
+				}
+
+				err := s.validatePattern(field.Name, *field.Rule.Pattern, fVal)
+				if err != nil {
+					s.errors[field.Name] = append(s.errors[field.Name], *err)
 				}
 			}
 		}
 	}
 
-	// TODO: sort errors by fieldName
-
+	// TODO: sort errors by fieldname
 	if len(s.errors) > 0 {
 		return s.errors
 	}

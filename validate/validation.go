@@ -2,10 +2,12 @@ package validate
 
 import (
 	"errors"
-	"github.com/beng90/spec2go/validate/validations"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 	"regexp"
+
+	"github.com/go-playground/validator/v10"
+
+	"github.com/beng90/spec2go/validate/validations"
 )
 
 var (
