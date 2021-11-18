@@ -13,7 +13,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/beng90/spec2go/openapi"
+	"github.com/beng90/spec2go/example/validators"
 	"github.com/beng90/spec2go/validate"
 	"github.com/beng90/spec2go/validate/validations"
 )
@@ -66,7 +66,7 @@ func main() {
 	}
 
 	// final validation
-	errs = openapi.AddOfferValidate(v, req, context.Background())
+	errs = validators.AddOfferValidate(v, req, context.Background())
 
 	// validator can return two types of error
 	switch vErr := errs.(type) {
