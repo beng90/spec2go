@@ -88,7 +88,7 @@ type Input struct {
 }
 
 func (i Input) Test(t *testing.T, err error) error {
-	//fmt.Printf("err %#v\n", err)
+	// fmt.Printf("err %#v\n", err)
 
 	if i.want != nil && len(i.want.(validate.ValidationErrors)) > 0 {
 		expected := i.want.(validate.ValidationErrors)
@@ -169,14 +169,16 @@ func TestSchemaValidator_Validate_String(t *testing.T) {
 		},
 	}
 
-	for _, input := range testData {
-		schemaValidator := getSchemaValidator(input.input)
-		schemaValidator.AddRule(fieldName, input.rules, nil)
-		err := schemaValidator.Validate()
+	for _, tt := range testData {
+		t.Run(tt.input, func(t *testing.T) {
+			schemaValidator := getSchemaValidator(tt.input)
+			schemaValidator.AddRule(fieldName, tt.rules, nil)
+			err := schemaValidator.Validate()
 
-		if err := input.Test(t, err); err != nil {
-			t.Error(err)
-		}
+			if err := tt.Test(t, err); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
@@ -228,14 +230,16 @@ func TestSchemaValidator_Validate_Integer(t *testing.T) {
 		},
 	}
 
-	for _, input := range testData {
-		schemaValidator := getSchemaValidator(input.input)
-		schemaValidator.AddRule(fieldName, input.rules, nil)
-		err := schemaValidator.Validate()
+	for _, tt := range testData {
+		t.Run(tt.input, func(t *testing.T) {
+			schemaValidator := getSchemaValidator(tt.input)
+			schemaValidator.AddRule(fieldName, tt.rules, nil)
+			err := schemaValidator.Validate()
 
-		if err := input.Test(t, err); err != nil {
-			t.Error(err)
-		}
+			if err := tt.Test(t, err); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
@@ -293,14 +297,16 @@ func TestSchemaValidator_Validate_Boolean(t *testing.T) {
 		},
 	}
 
-	for _, input := range testData {
-		schemaValidator := getSchemaValidator(input.input)
-		schemaValidator.AddRule(fieldName, input.rules, nil)
-		err := schemaValidator.Validate()
+	for _, tt := range testData {
+		t.Run(tt.input, func(t *testing.T) {
+			schemaValidator := getSchemaValidator(tt.input)
+			schemaValidator.AddRule(fieldName, tt.rules, nil)
+			err := schemaValidator.Validate()
 
-		if err := input.Test(t, err); err != nil {
-			t.Error(err)
-		}
+			if err := tt.Test(t, err); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
@@ -360,14 +366,16 @@ func TestSchemaValidator_Validate_Pattern(t *testing.T) {
 		},
 	}
 
-	for _, input := range testData {
-		schemaValidator := getSchemaValidator(input.input)
-		schemaValidator.AddRule(fieldName, input.rules, &input.pattern)
-		err := schemaValidator.Validate()
+	for _, tt := range testData {
+		t.Run(tt.input, func(t *testing.T) {
+			schemaValidator := getSchemaValidator(tt.input)
+			schemaValidator.AddRule(fieldName, tt.rules, &tt.pattern)
+			err := schemaValidator.Validate()
 
-		if err := input.Test(t, err); err != nil {
-			t.Error(err)
-		}
+			if err := tt.Test(t, err); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
@@ -395,14 +403,16 @@ func TestSchemaValidator_Validate_ObjectItem(t *testing.T) {
 		},
 	}
 
-	for _, input := range testData {
-		schemaValidator := getSchemaValidator(input.input)
-		schemaValidator.AddRule(fieldName, input.rules, nil)
-		err := schemaValidator.Validate()
+	for _, tt := range testData {
+		t.Run(tt.input, func(t *testing.T) {
+			schemaValidator := getSchemaValidator(tt.input)
+			schemaValidator.AddRule(fieldName, tt.rules, nil)
+			err := schemaValidator.Validate()
 
-		if err := input.Test(t, err); err != nil {
-			t.Error(err)
-		}
+			if err := tt.Test(t, err); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
@@ -436,14 +446,16 @@ func TestSchemaValidator_Validate_ArrayField(t *testing.T) {
 		},
 	}
 
-	for _, input := range testData {
-		schemaValidator := getSchemaValidator(input.input)
-		schemaValidator.AddRule(fieldName, input.rules, nil)
-		err := schemaValidator.Validate()
+	for _, tt := range testData {
+		t.Run(tt.input, func(t *testing.T) {
+			schemaValidator := getSchemaValidator(tt.input)
+			schemaValidator.AddRule(fieldName, tt.rules, nil)
+			err := schemaValidator.Validate()
 
-		if err := input.Test(t, err); err != nil {
-			t.Error(err)
-		}
+			if err := tt.Test(t, err); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
@@ -513,14 +525,16 @@ func TestSchemaValidator_Validate_NestedArray(t *testing.T) {
 		},
 	}
 
-	for _, input := range testData {
-		schemaValidator := getSchemaValidator(input.input)
-		schemaValidator.AddRule(fieldName, input.rules, nil)
-		err := schemaValidator.Validate()
+	for _, tt := range testData {
+		t.Run(tt.input, func(t *testing.T) {
+			schemaValidator := getSchemaValidator(tt.input)
+			schemaValidator.AddRule(fieldName, tt.rules, nil)
+			err := schemaValidator.Validate()
 
-		if err := input.Test(t, err); err != nil {
-			t.Error(err)
-		}
+			if err := tt.Test(t, err); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
@@ -620,14 +634,16 @@ func TestSchemaValidator_Validate_NestedArrayWithField(t *testing.T) {
 		},
 	}
 
-	for _, input := range testData {
-		schemaValidator := getSchemaValidator(input.input)
-		schemaValidator.AddRule(fieldName, input.rules, &input.pattern)
-		err := schemaValidator.Validate()
+	for _, tt := range testData {
+		t.Run(tt.input, func(t *testing.T) {
+			schemaValidator := getSchemaValidator(tt.input)
+			schemaValidator.AddRule(fieldName, tt.rules, &tt.pattern)
+			err := schemaValidator.Validate()
 
-		if err := input.Test(t, err); err != nil {
-			t.Error(err)
-		}
+			if err := tt.Test(t, err); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
@@ -704,15 +720,17 @@ func TestSchemaValidator_Validate_NestedArray_ParentRequired(t *testing.T) {
 		},
 	}
 
-	for _, input := range testData {
-		schemaValidator := getSchemaValidator(input.input)
-		schemaValidator.AddRule("product", "required", nil)
-		schemaValidator.AddRule(fieldName, input.rules, nil)
-		err := schemaValidator.Validate()
+	for _, tt := range testData {
+		t.Run(tt.input, func(t *testing.T) {
+			schemaValidator := getSchemaValidator(tt.input)
+			schemaValidator.AddRule("product", "required", nil)
+			schemaValidator.AddRule(fieldName, tt.rules, nil)
+			err := schemaValidator.Validate()
 
-		if err := input.Test(t, err); err != nil {
-			t.Error(err)
-		}
+			if err := tt.Test(t, err); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
