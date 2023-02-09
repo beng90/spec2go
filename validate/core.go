@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -69,20 +69,20 @@ func Pattern(val string) *string {
 
 func getRequestBody(req *http.Request) (requestBody MapField, err error) {
 	// Read body
-	buffer, err := ioutil.ReadAll(req.Body)
+	buffer, err := io.ReadAll(req.Body)
 	if err != nil {
 		return nil, err
 	}
 
 	// restore body in request
-	req.Body = ioutil.NopCloser(bytes.NewBuffer(buffer))
+	req.Body = io.NopCloser(bytes.NewBuffer(buffer))
 
 	if json.Valid(buffer) == false {
 		return nil, ErrInvalidJSON
 	}
 
 	if err := json.Unmarshal(buffer, &requestBody); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return requestBody, nil
