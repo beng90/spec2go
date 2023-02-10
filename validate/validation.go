@@ -14,7 +14,7 @@ var (
 	ErrInvalidJSON = errors.New("invalid json")
 )
 
-func registerCustomValidations(validator *validator.Validate) {
+func RegisterCustomValidations(validator *validator.Validate) {
 	_ = validator.RegisterValidation("ISO8601", IsISO8601Date)
 	_ = validator.RegisterValidation("boolean", validations.IsBoolean)
 	_ = validator.RegisterValidation("string", validations.IsString)

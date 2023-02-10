@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/beng90/spec2go/validate"
-	"github.com/beng90/spec2go/validate/validations"
 )
 
 func NewValidator() *validator.Validate {
@@ -28,10 +27,7 @@ func NewValidator() *validator.Validate {
 		return name
 	})
 
-	// custom validations
-	_ = v.RegisterValidation("string", validations.IsString)
-	_ = v.RegisterValidation("notblank", validations.NotBlank)
-	_ = v.RegisterValidation("boolean", validations.IsBoolean)
+	validate.RegisterCustomValidations(v)
 
 	return v
 }
@@ -227,6 +223,12 @@ func TestSchemaValidator_Validate_Integer(t *testing.T) {
 			input:      fmt.Sprintf(`{"%s": 123456}`, fieldName),
 			errorField: fieldName,
 			want:       getExpectedError(fieldName, "max", float64(123456), "12345"),
+		},
+		{
+			rules:      "required,integer,min=1,max=9223372036854775807",
+			input:      fmt.Sprintf(`{"%s": 9223372036854775808}`, fieldName),
+			errorField: fieldName,
+			want:       getExpectedError(fieldName, "max", uint64(9223372036854775808), "9223372036854775807"),
 		},
 	}
 

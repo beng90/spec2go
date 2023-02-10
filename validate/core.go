@@ -93,9 +93,6 @@ func NewSchemaValidator(v *validator.Validate, req *http.Request, ctx context.Co
 		ctx = context.Background()
 	}
 
-	// custom validations
-	registerCustomValidations(v)
-
 	requestBody, err := getRequestBody(req)
 	if err != nil {
 		return nil, err

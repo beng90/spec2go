@@ -50,6 +50,7 @@ func main() {
 
 	// create new validator
 	v := NewValidator()
+	validate.RegisterCustomValidations(v)
 
 	// read body
 	buffer, err := ioutil.ReadAll(req.Body)

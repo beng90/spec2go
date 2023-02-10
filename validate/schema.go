@@ -140,6 +140,9 @@ func (f *FieldSchema) UnmarshalJSON(data []byte) error {
 	case map[string]interface{}:
 		f.Value = v
 		_ = json.Unmarshal(data, &f.Properties)
+	case float64:
+		// TODO: float64 changes max value for int64
+		f.Value = v
 	default:
 		f.Value = v
 		//fmt.Printf("%T s:%s\n", v, data)
